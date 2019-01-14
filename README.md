@@ -36,13 +36,18 @@ The image can accept three, optional, environment variables:
   * `"*"`: Enables CORS in wildcard mode. This will allow all browsers to use
   the API.
   
-  * `"<lua pattern>"`: Enables CORS only for origins that match the Lua pattern.
+  * `"<lua pattern> [<lua pattern>, ...]"`: Enables CORS only for origins that match one
+  of the patterns in a space-delimited list.
+  
   Some examples:
   
     * `^http://www%.foo%.com$`: Exact match of one domain
     
     * `^https?://.*foo%.com$`: Matches all origins ending in `foo.com`. Both http
     and https URLs match.
+    
+    * `^http://foo.com$ ^http://bar.com$`: Exact match for either `http://foo.com`
+    or `http://bar.com`.
     
 * **`API_HOSTNAME`:** The hostname of the factomd instance. Defaults to `localhost`.
 

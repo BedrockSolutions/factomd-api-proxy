@@ -1,0 +1,8 @@
+[template]
+src = "dispatcher.lua.tmpl"
+dest = "/home/nginx/modules/dispatcher.lua"
+owner = "nginx"
+mode = "0644"
+keys = [
+  "/allow/origin",
+]
