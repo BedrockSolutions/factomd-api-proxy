@@ -21,13 +21,11 @@ passed through to factomd, increasing security.
 
 ## Supported tags and Dockerfile links
 
-* [`latest` (*Dockerfile*)](https://github.com/BedrockSolutions/dockerfile/blob/master/factomd-api-proxy/Dockerfile)
+* [`latest` (*Dockerfile*)](https://github.com/BedrockSolutions/factomd-api-proxy/blob/master/Dockerfile)
   
-* [`0.1.0` (*Dockerfile*)](https://github.com/BedrockSolutions/dockerfile/blob/factomd-api-proxy-0.1.0/factomd-api-proxy/Dockerfile)
+* [`0.2.1` (*Dockerfile*)](https://github.com/BedrockSolutions/factomd-api-proxy/blob/0.2.1/Dockerfile)
 
 ## Environment variables
-
-The image can accept three, optional, environment variables:
 
 * **`ALLOW_ORIGIN`:** Configures CORS. Three modes of operation are supported:
 
@@ -37,9 +35,7 @@ The image can accept three, optional, environment variables:
   the API.
   
   * `"<lua pattern> [<lua pattern>, ...]"`: Enables CORS only for origins that match one
-  of the patterns in a space-delimited list.
-  
-  Some examples:
+  of the patterns in a space-delimited list. Some examples:
   
     * `^http://www%.foo%.com$`: Exact match of one domain
     
