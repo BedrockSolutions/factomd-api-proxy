@@ -5,6 +5,27 @@
 lua_package_path "$prefix/lua/?.lua;;";
 lua_code_cache on;
 
+# Forwarded header support
+map $remote_addr $proxy_forwarded_elem {
+  # IPv4 addresses can be sent as-is
+  ~^[0-9.]+$ "for=$remote_addr";
+
+  # IPv6 addresses need to be bracketed and quoted
+  ~^[0-9A-Fa-f:.]+$ "for=\"[$remote_addr]\"";
+
+  # Unix domain socket names cannot be represented in RFC 7239 syntax
+  default "for=unknown";
+}
+
+# Forwarded header support
+map $http_forwarded $proxy_add_forwarded {
+  # If the incoming Forwarded header is syntactically valid, append to it
+  "~^(,[ \\t]*)*([!#$%&'*+.^_`|~0-9A-Za-z-]+=([!#$%&'*+.^_`|~0-9A-Za-z-]+|\"([\\t \\x21\\x23-\\x5B\\x5D-\\x7E\\x80-\\xFF]|\\\\[\\t \\x21-\\x7E\\x80-\\xFF])*\"))?(;([!#$%&'*+.^_`|~0-9A-Za-z-]+=([!#$%&'*+.^_`|~0-9A-Za-z-]+|\"([\\t \\x21\\x23-\\x5B\\x5D-\\x7E\\x80-\\xFF]|\\\\[\\t \\x21-\\x7E\\x80-\\xFF])*\"))?)*([ \\t]*,([ \\t]*([!#$%&'*+.^_`|~0-9A-Za-z-]+=([!#$%&'*+.^_`|~0-9A-Za-z-]+|\"([\\t \\x21\\x23-\\x5B\\x5D-\\x7E\\x80-\\xFF]|\\\\[\\t \\x21-\\x7E\\x80-\\xFF])*\"))?(;([!#$%&'*+.^_`|~0-9A-Za-z-]+=([!#$%&'*+.^_`|~0-9A-Za-z-]+|\"([\\t \\x21\\x23-\\x5B\\x5D-\\x7E\\x80-\\xFF]|\\\\[\\t \\x21-\\x7E\\x80-\\xFF])*\"))?)*)?)*$" "$http_forwarded, $proxy_forwarded_elem";
+
+  # Otherwise, replace it
+  default "$proxy_forwarded_elem";
+}
+
 server {
   listen {{ $port }} default_server;
   server_name localhost;
@@ -12,6 +33,8 @@ server {
   location / {
     rewrite_by_lua_block { require("dispatcher").go() }
 
+    proxy_set_header Forwarded $proxy_add_forwarded;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_pass http://{{ $apiHostname }}:{{ $apiPort }};
   }
 }

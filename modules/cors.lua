@@ -33,12 +33,13 @@ local function is_origin_allowed(allow_origin, origin)
 end
 
 local function set_common_cors_headers(allow_origin, origin)
-  local is_wild = is_wildcard_origin(allow_origin)
-  ngx.header['Access-Control-Allow-Origin'] = is_wild and '*' or origin
-  ngx.header['Access-Control-Allow-Credentials'] = tostring(not is_wild)
-
-  if not is_wild
+  if is_wildcard_origin(allow_origin)
   then
+    ngx.header['Access-Control-Allow-Origin'] = '*'
+    ngx.header['Access-Control-Allow-Credentials'] = 'false'
+  else
+    ngx.header['Access-Control-Allow-Origin'] = origin
+    ngx.header['Access-Control-Allow-Credentials'] = 'true'
     ngx.header['Varies'] = 'Origin'
   end
 end
@@ -61,7 +62,7 @@ local function handle_options(allow_origin, origin)
   end
 
   set_common_cors_headers(allow_origin, origin)
-  ngx.header['Access-Control-Allow-Methods'] = 'POST'
+  ngx.header['Access-Control-Allow-Methods'] = 'OPTIONS, POST'
   ngx.header['Access-Control-Allow-Headers'] = get_header('Access-Control-Request-Headers')
 
   options_body('Origin %q is allowed', origin)
