@@ -9,21 +9,9 @@ server {
   listen {{ $port }} default_server;
   server_name localhost;
 
-  location = / {
-    if ($request_method = GET) {
-      return 200;
-    }
-
-    return 400;
-  }
-
-  location = /v2 {
-    rewrite_by_lua_block { require("dispatcher").main() }
+  location / {
+    rewrite_by_lua_block { require("dispatcher").go() }
 
     proxy_pass http://{{ $apiHostname }}:{{ $apiPort }};
-  }
-
-  location / {
-    return 400;
   }
 }

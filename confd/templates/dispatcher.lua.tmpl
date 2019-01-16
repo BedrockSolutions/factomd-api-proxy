@@ -1,20 +1,13 @@
-{{- $allowOrigin := getv "/allow/origin" -}}
+local main = require('main')
 
-local security = require("security")
+main.init({
+  allow_origin = '{{ getv "/allow/origin" }}'
+})
 
-{{- if $allowOrigin }}
-local cors = require("cors")
-{{- end }}
-
-local function main()
-  security.main()
-
-{{- if $allowOrigin }}
-  cors.main("{{ $allowOrigin }}")
-{{ end }}
-
+local function go()
+  main.go()
 end
 
 return {
-  main = main,
+  go = go,
 }

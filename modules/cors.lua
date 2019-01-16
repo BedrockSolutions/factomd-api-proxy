@@ -1,7 +1,8 @@
 local finish_request = require('shared').finish_request
+local get_header = require('shared').get_header
 
-local function finish_preflight(message, ...)
-  finish_request(ngx.HTTP_OK, string.format('CORS Pre-flight: %s', message), ...)
+local function options_body(message, ...)
+  ngx.say(string.format('CORS Pre-flight: ' .. message, ...))
 end
 
 local function is_wildcard_origin(allow_origin)
@@ -31,10 +32,6 @@ local function is_origin_allowed(allow_origin, origin)
   return false
 end
 
-local function get_header(name)
-  return ngx.req.get_headers()[name] or ''
-end
-
 local function set_common_cors_headers(allow_origin, origin)
   local is_wild = is_wildcard_origin(allow_origin)
   ngx.header['Access-Control-Allow-Origin'] = is_wild and '*' or origin
@@ -47,14 +44,10 @@ local function set_common_cors_headers(allow_origin, origin)
 end
 
 local function handle_options(allow_origin, origin)
-  if is_cors_disabled(allow_origin)
-  then
-    finish_preflight('No allowed origin configured')
-  end
-
   if not is_origin_allowed(allow_origin, origin)
   then
-    finish_preflight('Origin %q is not allowed', origin)
+    options_body('Origin %q is not allowed', origin)
+    return
   end
 
   -- Get the requested method so that it can be validated
@@ -63,24 +56,36 @@ local function handle_options(allow_origin, origin)
   -- The only method that can be requested is POST
   if req_method ~= 'POST'
   then
-    finish_preflight('The requested method %q is not allowed', req_method)
+    options_body('The requested method %q is not allowed', req_method)
+    return
   end
 
   set_common_cors_headers(allow_origin, origin)
   ngx.header['Access-Control-Allow-Methods'] = 'POST'
   ngx.header['Access-Control-Allow-Headers'] = get_header('Access-Control-Request-Headers')
 
-  finish_preflight('Origin %q is allowed', origin)
+  options_body('Origin %q is allowed', origin)
 end
 
 local function handle_post(allow_origin, origin)
-  if not is_cors_disabled(allow_origin) and is_origin_allowed(allow_origin, origin)
+  if is_origin_allowed(allow_origin, origin)
   then
     set_common_cors_headers(allow_origin, origin)
   end
 end
 
-local function main(allow_origin)
+local allow_origin
+
+local function init(config)
+  allow_origin = config.allow_origin
+end
+
+local function go()
+  if is_cors_disabled(allow_origin)
+  then
+    return
+  end
+
   local method = ngx.req.get_method()
   local origin = get_header('Origin')
 
@@ -90,11 +95,10 @@ local function main(allow_origin)
   elseif method == 'POST'
   then
     handle_post(allow_origin, origin)
-  else
-    finish_request(ngx.HTTP_BAD_REQUEST, 'The HTTP method %q is not allowed', method)
   end
 end
 
 return {
-  main = main,
+  init = init,
+  go = go,
 }
