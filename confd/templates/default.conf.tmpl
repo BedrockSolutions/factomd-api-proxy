@@ -1,5 +1,4 @@
-{{- $apiHostname := getv "/api/hostname" -}}
-{{- $apiPort := getv "/api/port" -}}
+{{- $apiUrl := getv "/api/url" -}}
 {{- $port := getv "/port" -}}
 
 lua_package_path "$prefix/lua/?.lua;;";
@@ -30,11 +29,15 @@ server {
   listen {{ $port }} default_server;
   server_name localhost;
 
+  # See https://blog.percy.io/tuning-nginx-behind-google-cloud-platform-http-s-load-balancer-305982ddb340
+  keepalive_timeout 650;
+  keepalive_requests 10000;
+
   location / {
     rewrite_by_lua_block { require("dispatcher").go() }
 
     proxy_set_header Forwarded $proxy_add_forwarded;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_pass http://{{ $apiHostname }}:{{ $apiPort }};
+    proxy_pass {{ $apiUrl }};
   }
 }

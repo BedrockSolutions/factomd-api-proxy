@@ -20,8 +20,7 @@ WORKDIR /home/nginx
 USER nginx
 
 ENV ALLOW_ORIGIN ""
-ENV API_HOSTNAME "localhost"
-ENV API_PORT 8088
+ENV API_URL "http://localhost:8088"
 ENV PORT 8087
 
 ENTRYPOINT ["./entrypoint.sh"]

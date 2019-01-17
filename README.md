@@ -23,7 +23,7 @@ passed through to factomd, increasing security.
 
 * [`latest` (*Dockerfile*)](https://github.com/BedrockSolutions/factomd-api-proxy/blob/master/Dockerfile)
   
-* [`0.2.1` (*Dockerfile*)](https://github.com/BedrockSolutions/factomd-api-proxy/blob/0.2.1/Dockerfile)
+* [`0.2.4` (*Dockerfile*)](https://github.com/BedrockSolutions/factomd-api-proxy/blob/0.2.4/Dockerfile)
 
 ## Environment variables
 
@@ -42,11 +42,29 @@ passed through to factomd, increasing security.
     * `^https?://.*foo%.com$`: Matches all origins ending in `foo.com`. Both http
     and https URLs match.
     
-    * `^http://foo.com$ ^http://bar.com$`: Exact match for either `http://foo.com`
+    * `^http://foo%.com$ ^http://bar%.com$`: Exact match for either `http://foo.com`
     or `http://bar.com`.
     
-* **`API_HOSTNAME`:** The hostname of the factomd instance. Defaults to `localhost`.
-
-* **`API_PORT`:** The API port on the factomd instance. Defaults to `8088`.
+* **`API_URL`:** The URL of the upstream factomd instance. Defaults to `http://localhost:8088`.
 
 * **`PORT`:** The port the proxy will listen on. Defaults to `8087`.
+
+## Examples
+
+### Proxy the API port to port 80
+```bash
+docker run -d -p 80:8087 --name factomd-api-proxy bedrocksolutions/factomd-api-proxy:<tag>
+```
+
+### Enable wildcard CORS
+```bash
+docker run -d -p 80:8087 -e "ALLOW_ORIGIN=*" --name factomd-api-proxy bedrocksolutions/factomd-api-proxy:<tag>
+```
+
+### Enable CORS for a specific domain
+```bash
+docker run -d -p 80:8087 -e "ALLOW_ORIGIN=^https?://www%.foo%.com$" --name factomd-api-proxy bedrocksolutions/factomd-api-proxy:<tag>
+```
+
+> Note: Since the `.` character has special meaning in Lua patterns, it needs to be
+escaped with the `%` escape character.

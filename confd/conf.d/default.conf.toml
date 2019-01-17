@@ -5,8 +5,7 @@ owner = "nginx"
 mode = "0644"
 keys = [
   "/allow/origin",
-  "/api/hostname",
-  "/api/port",
+  "/api/url",
   "/port",
 ]
 check_cmd = "/usr/local/openresty/bin/openresty -t"

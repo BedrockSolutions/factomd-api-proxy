@@ -12,11 +12,12 @@ local function go()
   local method = ngx.req.get_method()
   local uri = ngx.var.uri
 
-  ngx.log(ngx.ERR, string.format('Method: %s, URI: %s', method, uri))
+  ngx.log(ngx.INFO, string.format('Method: %s, URI: %s', method, uri))
 
   if uri == '/' and method == 'GET'
   then
     set_content_type('text/html')
+    ngx.say('Health check succeeded')
     ngx.exit(ngx.HTTP_OK)
 
   elseif uri == '/v2' and method == 'OPTIONS'
