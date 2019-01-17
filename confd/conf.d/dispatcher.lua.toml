@@ -4,5 +4,7 @@ dest = "/home/nginx/modules/dispatcher.lua"
 owner = "nginx"
 mode = "0644"
 keys = [
-  "/allow/origin",
+  "/allowOrigin",
 ]
+check_cmd = "/usr/local/openresty/bin/openresty -t"
+restart_cmd = "/usr/local/openresty -s reload"

@@ -1,7 +1,9 @@
+{{- $allowOrigin := getv "/allowOrigin" -}}
+
 local main = require('main')
 
 main.init({
-  allow_origin = '{{ getv "/allow/origin" }}'
+  allow_origin = '{{ $allowOrigin }}'
 })
 
 local function go()

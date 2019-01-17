@@ -4,8 +4,8 @@ dest = "/home/nginx/default.conf"
 owner = "nginx"
 mode = "0644"
 keys = [
-  "/allow/origin",
-  "/api/url",
+  "/apiUrl",
   "/port",
 ]
 check_cmd = "/usr/local/openresty/bin/openresty -t"
+restart_cmd = "/usr/local/openresty -s reload"

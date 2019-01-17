@@ -1,0 +1,3 @@
+backend = "file"
+watch = true
+file = ["/etc/confd/defaults.yaml", "/home/nginx/values"]

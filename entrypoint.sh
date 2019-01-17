@@ -2,6 +2,8 @@
 
 set -e
 
-confd -onetime -backend env
+confd &
 
-exec "$@"
+sleep 2
+
+exec /usr/bin/openresty -g 'daemon off;'
