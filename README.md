@@ -23,7 +23,7 @@ passed through to factomd, increasing security.
 
 * [`latest` (*Dockerfile*)](https://github.com/BedrockSolutions/factomd-api-proxy/blob/master/Dockerfile)
   
-* [`0.2.4` (*Dockerfile*)](https://github.com/BedrockSolutions/factomd-api-proxy/blob/0.2.4/Dockerfile)
+* [`0.3.0` (*Dockerfile*)](https://github.com/BedrockSolutions/factomd-api-proxy/blob/0.3.0/Dockerfile)
 
 ## Environment variables
 
