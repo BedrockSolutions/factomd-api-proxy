@@ -21,7 +21,7 @@ USER nginx
 
 ENV ALLOW_ORIGIN ""
 ENV API_URL "http://localhost:8088"
-ENV PORT 80
+ENV PORT 8080
 
 ENTRYPOINT ["./entrypoint.sh"]
 
