@@ -1,4 +1,3 @@
-local finish_request = require('shared').finish_request
 local get_header = require('shared').get_header
 
 local function options_body(message, ...)
@@ -21,7 +20,7 @@ local function is_origin_allowed(allow_origin, origin)
 
   for pattern in string.gmatch(allow_origin, '%S+')
   do
-    ngx.log(ngx.ERR, string.format('Origin pattern: %q', pattern))
+    ngx.log(ngx.INFO, string.format('Origin pattern: %q', pattern))
 
     if string.match(origin, pattern)
     then
@@ -75,13 +74,9 @@ local function handle_post(allow_origin, origin)
   end
 end
 
-local allow_origin
+local function go(config)
+  local allow_origin = config.allow_origin
 
-local function init(config)
-  allow_origin = config.allow_origin
-end
-
-local function go()
   if is_cors_disabled(allow_origin)
   then
     return
@@ -100,6 +95,5 @@ local function go()
 end
 
 return {
-  init = init,
   go = go,
 }

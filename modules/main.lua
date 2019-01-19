@@ -4,11 +4,7 @@ local function set_content_type(mime_type)
   ngx.header['Content-Type'] = string.format('%s; charset=utf-8', mime_type)
 end
 
-local function init(config)
-  cors.init(config)
-end
-
-local function go()
+local function go(config)
   local method = ngx.req.get_method()
   local uri = ngx.var.uri
 
@@ -23,13 +19,13 @@ local function go()
   elseif uri == '/v2' and method == 'OPTIONS'
   then
     set_content_type('text/html')
-    cors.go()
+    cors.go(config)
     ngx.exit(ngx.HTTP_OK)
 
   elseif uri == '/v2' and method == 'POST'
   then
     set_content_type('application/json')
-    cors.go()
+    cors.go(config)
 
   else
     ngx.exit(ngx.HTTP_NOT_FOUND)
@@ -37,6 +33,5 @@ local function go()
 end
 
 return {
-  init = init,
   go = go,
 }

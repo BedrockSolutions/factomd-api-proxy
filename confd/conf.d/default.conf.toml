@@ -1,11 +1,14 @@
 [template]
 src = "default.conf.tmpl"
-dest = "/home/nginx/default.conf"
-owner = "nginx"
+dest = "/home/app/default.conf"
+owner = "app"
 mode = "0644"
 keys = [
-  "/apiUrl",
-  "/port",
+  "/corsAllowOrigin",
+  "/factomdUrl",
+  "/listenPort",
+  "/sslCertificate",
+  "/sslPrivateKey",
 ]
-check_cmd = "/usr/local/openresty/bin/openresty -t"
-restart_cmd = "/usr/local/openresty -s reload"
+check_cmd = "/usr/bin/openresty -t"
+reload_cmd = "/usr/bin/openresty -s reload"
