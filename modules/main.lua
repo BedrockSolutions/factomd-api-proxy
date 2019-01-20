@@ -10,6 +10,8 @@ local function go(config)
 
   ngx.log(ngx.INFO, string.format('Method: %s, URI: %s', method, uri))
 
+  ngx.header['Strict-Transport-Security'] = 'max-age=63072000;'
+
   if uri == '/' and method == 'GET'
   then
     set_content_type('text/html')
