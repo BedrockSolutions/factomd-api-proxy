@@ -1,33 +1,50 @@
 local cors = require('cors')
 
-local function set_content_type(mime_type)
-  ngx.header['Content-Type'] = string.format('%s; charset=utf-8', mime_type)
+local function global_headers()
+  ngx.header['Content-Security-Policy'] = "default-src 'none'"
+  ngx.header['Content-Type'] = 'application/json; charset=utf-8'
+  ngx.header['Referrer-Policy'] = 'same-origin'
+  ngx.header['Strict-Transport-Security'] = 'max-age=63072000;'
+  ngx.header['X-Content-Type-Options'] = 'nosniff'
+  ngx.header['X-Frame-Options'] = 'SAMEORIGIN'
+  ngx.header['X-XSS-Protection'] = '1; mode=block'
+end
+
+local function factomd_subrequest()
+  local options = {
+    always_forward_body = true,
+    method = ngx.HTTP_POST,
+  }
+
+  ngx.req.read_body()
+  local res = ngx.location.capture('/factomd', options)
+
+  ngx.status = res.status
+  ngx.header['Content-Length'] = res.header['Content-Length']
+  ngx.print(res.body)
 end
 
 local function go(config)
   local method = ngx.req.get_method()
   local uri = ngx.var.uri
 
-  ngx.log(ngx.INFO, string.format('Method: %s, URI: %s', method, uri))
-
-  ngx.header['Strict-Transport-Security'] = 'max-age=63072000;'
+  global_headers()
 
   if uri == '/' and method == 'GET'
   then
-    set_content_type('text/html')
-    ngx.say('Health check succeeded')
+    ngx.say('{"message": "Health check succeeded"}')
     ngx.exit(ngx.HTTP_OK)
 
   elseif uri == '/v2' and method == 'OPTIONS'
   then
-    set_content_type('text/html')
     cors.go(config)
     ngx.exit(ngx.HTTP_OK)
 
   elseif uri == '/v2' and method == 'POST'
   then
-    set_content_type('application/json')
     cors.go(config)
+    factomd_subrequest()
+    ngx.exit(ngx.OK)
 
   else
     ngx.exit(ngx.HTTP_NOT_FOUND)

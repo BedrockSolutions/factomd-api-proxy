@@ -7,8 +7,10 @@ keys = [
   "/corsAllowOrigin",
   "/factomdUrl",
   "/listenPort",
-  "/sslCertificate",
-  "/sslPrivateKey",
+  "/ssl/certificate",
+  "/ssl/ciphers",
+  "/ssl/privateKey",
+  "/ssl/protocols",
 ]
 check_cmd = "/usr/bin/openresty -t"
 reload_cmd = "/usr/bin/openresty -s reload"

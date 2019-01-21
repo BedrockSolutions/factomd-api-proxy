@@ -1,14 +1,21 @@
-local function finish_request(status, message, ...)
-  ngx.status = status
-  ngx.say(string.format(message, ...))
-  ngx.exit(status)
-end
-
 local function get_header(name)
   return ngx.req.get_headers()[name] or ''
 end
 
+function dump(o)
+   if type(o) == 'table' then
+      local s = '{ '
+      for k,v in pairs(o) do
+         if type(k) ~= 'number' then k = '"'..k..'"' end
+         s = s .. '['..k..'] = ' .. dump(v) .. ','
+      end
+      return s .. '} '
+   else
+      return tostring(o)
+   end
+end
+
 return {
-  finish_request = finish_request,
+  dump = dump,
   get_header = get_header,
 }

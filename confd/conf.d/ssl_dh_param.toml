@@ -4,7 +4,7 @@ dest = "/home/app/ssl/dhparam.pem"
 owner = "app"
 mode = "0644"
 keys = [
-  "/sslDhParam",
+  "/ssl/dhParam",
 ]
 check_cmd = "/usr/bin/openresty -t"
 reload_cmd = "/usr/bin/openresty -s reload"

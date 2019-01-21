@@ -1,7 +1,8 @@
 local get_header = require('shared').get_header
 
 local function options_body(message, ...)
-  ngx.say(string.format('CORS Pre-flight: ' .. message, ...))
+  local formattedMsg = string.format(message, ...)
+  ngx.say(string.format('{"message": "CORS Pre-flight: %s"}', formattedMsg))
 end
 
 local function is_wildcard_origin(allow_origin)
@@ -46,7 +47,7 @@ end
 local function handle_options(allow_origin, origin)
   if not is_origin_allowed(allow_origin, origin)
   then
-    options_body('Origin %q is not allowed', origin)
+    options_body('Origin %s is not allowed', origin)
     return
   end
 
@@ -56,7 +57,7 @@ local function handle_options(allow_origin, origin)
   -- The only method that can be requested is POST
   if req_method ~= 'POST'
   then
-    options_body('The requested method %q is not allowed', req_method)
+    options_body('The requested method %s is not allowed', req_method)
     return
   end
 
@@ -64,7 +65,7 @@ local function handle_options(allow_origin, origin)
   ngx.header['Access-Control-Allow-Methods'] = 'OPTIONS, POST'
   ngx.header['Access-Control-Allow-Headers'] = get_header('Access-Control-Request-Headers')
 
-  options_body('Origin %q is allowed', origin)
+  options_body('Origin %s is allowed', origin)
 end
 
 local function handle_post(allow_origin, origin)

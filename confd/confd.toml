@@ -1,5 +1,5 @@
 backend = "file"
 confdir = "/home/app/confd"
-file = ["/home/app/confd/defaults.yaml", "/home/app/values"]
+file = ["/home/app/defaults.yaml", "/home/app/values"]
 interval = 10
 watch = false

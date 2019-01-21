@@ -1,8 +1,10 @@
 {{- $corsAllowOrigin := getv "/corsAllowOrigin" "" -}}
 {{- $factomdUrl := getv "/factomdUrl" -}}
 {{- $listenPort := getv "/listenPort" "" -}}
-{{- $sslCertificate := getv "/sslCertificate" "" -}}
-{{- $sslPrivateKey := getv "/sslPrivateKey" "" -}}
+{{- $sslCertificate := getv "/ssl/certificate" "" -}}
+{{- $sslCiphers := getv "/ssl/ciphers" -}}
+{{- $sslPrivateKey := getv "/ssl/privateKey" "" -}}
+{{- $sslProtocols := getv "/ssl/protocols" -}}
 
 {{- $sslEnabled := and $sslCertificate $sslPrivateKey -}}
 {{- $defaultPort := or (and $sslEnabled 8443) 8080 -}}
@@ -41,10 +43,10 @@ server {
   ssl_buffer_size 4k;
   ssl_certificate /home/app/ssl/certificate.pem;
   ssl_certificate_key /home/app/ssl/private_key.pem;
-  ssl_ciphers 'ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384';
+  ssl_ciphers {{ $sslCiphers }};
   ssl_dhparam /home/app/ssl/dhparam.pem;
   ssl_prefer_server_ciphers on;
-  ssl_protocols TLSv1.2 TLSv1.3;
+  ssl_protocols {{ $sslProtocols }};
   ssl_session_cache shared:TLS:2m;
   ssl_session_tickets off;
   ssl_session_timeout 1d;
@@ -64,9 +66,15 @@ server {
 
       require("main").go(config)
     }
+  }
+
+  location = /factomd {
+    internal;
 
     proxy_set_header Forwarded $proxy_add_forwarded;
+    proxy_set_header Host $host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_pass {{ $factomdUrl }};
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_pass {{ $factomdUrl }}/v2;
   }
 }
