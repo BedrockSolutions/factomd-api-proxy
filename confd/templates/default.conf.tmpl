@@ -1,5 +1,6 @@
 {{- $corsAllowOrigin := getv "/corsAllowOrigin" "" -}}
 {{- $factomdUrl := getv "/factomdUrl" -}}
+{{- $healthCheckMaxBlockAge := getv "/healthCheck/maxBlockAgeInSeconds" -}}
 {{- $listenPort := getv "/listenPort" "" -}}
 {{- $sslCertificate := getv "/ssl/certificate" "" -}}
 {{- $sslCiphers := getv "/ssl/ciphers" -}}
@@ -10,8 +11,13 @@
 {{- $defaultPort := or (and $sslEnabled 8443) 8080 -}}
 {{- $port := or $listenPort $defaultPort -}}
 
+# Prevents the request body from being written to a temp file
+client_max_body_size 256k;
+client_body_buffer_size 256k;
+
 lua_package_path "$prefix/lua/?.lua;;";
 lua_code_cache on;
+lua_shared_dict health_check 128k;
 
 # Forwarded header support
 map $remote_addr $proxy_forwarded_elem {
@@ -61,7 +67,8 @@ server {
   location / {
     rewrite_by_lua_block {
       local config = {
-        allow_origin = '{{ $corsAllowOrigin }}'
+        allow_origin = '{{ $corsAllowOrigin }}',
+        max_block_age = tonumber({{ $healthCheckMaxBlockAge }}),
       }
 
       require("main").go(config)

@@ -1,4 +1,5 @@
 local cors = require('cors')
+local health_check = require('health_check')
 
 local function global_headers()
   ngx.header['Content-Security-Policy'] = "default-src 'none'"
@@ -10,7 +11,7 @@ local function global_headers()
   ngx.header['X-XSS-Protection'] = '1; mode=block'
 end
 
-local function factomd_subrequest()
+local function passthrough_api_call()
   local options = {
     always_forward_body = true,
     method = ngx.HTTP_POST,
@@ -30,20 +31,17 @@ local function go(config)
 
   global_headers()
 
-  if uri == '/' and method == 'GET'
-  then
-    ngx.say('{"message": "Health check succeeded"}')
+  cors.go(config)
+
+  if uri == '/' and method == 'GET' then
+    health_check.go(config)
+    ngx.exit(ngx.OK)
+
+  elseif (uri == '/' or uri == '/v2') and method == 'OPTIONS' then
     ngx.exit(ngx.HTTP_OK)
 
-  elseif uri == '/v2' and method == 'OPTIONS'
-  then
-    cors.go(config)
-    ngx.exit(ngx.HTTP_OK)
-
-  elseif uri == '/v2' and method == 'POST'
-  then
-    cors.go(config)
-    factomd_subrequest()
+  elseif uri == '/v2' and method == 'POST' then
+    passthrough_api_call()
     ngx.exit(ngx.OK)
 
   else

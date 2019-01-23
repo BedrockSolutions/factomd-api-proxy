@@ -20,9 +20,8 @@ COPY entrypoint.sh ./entrypoint.sh
 
 RUN \
   mkdir ./ssl ./values && \
-  chown -R app:app /usr/local/openresty /home/app
-
-RUN chmod +x /usr/local/bin/confd
+  chown -R app:app /usr/local/openresty /home/app && \
+  chmod +x /usr/local/bin/confd
 
 USER app
 
