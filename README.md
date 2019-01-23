@@ -10,17 +10,20 @@ allowed origins.
 * **SSL support:** High-grade SSL configuration that can deliver an A+ SSL Labs rating,
 given a strong cert/key pair.
 
-* **Health check support:** The `GET /` path returns a `200 OK`, which allows the API to
-work correctly with cloud provider infrastructure, such as the GCP HTTP load balancer.
+* **Health check support:** The `GET /` endpoint performs tests on the underlying factomd 
+instance. This allows the API to work correctly with cloud provider infrastructure, such 
+as the Cloudflare and Google Cloud load balancers.
 
 * **Strict protocol operation:** Only a very narrow range of HTTP verbs and URIs are
 passed through to factomd, increasing security.
 
-## Useful Links
-      
-  * [Base Image](https://hub.docker.com/r/openresty/openresty/)
-  
-  * [Lua Patterns](https://www.lua.org/pil/20.2.html)
+* **Dynamic reconfiguration:** Edits to the YAML configuration files will cause an automatic
+reload of the Nginx configuration, eliminating the need to restart the container in most cases.
+
+* **Kubernetes ready:** The ability to split configuration into multiple files dovetails
+perfectly with Kubernetes configuration patterns. Painlessly store most of the configuration 
+in one or more ConfigMaps, while storing sensitive data such as the SSL private key in a 
+Secret. No impedance mismatch!
 
 ## Supported tags and Dockerfile links
 
@@ -138,3 +141,9 @@ docker run -d \
   -v /path/to/config/dir:/home/app/values \
   --name proxy bedrocksolutions/factomd-api-proxy:<tag>
 ```
+
+## Useful Links
+      
+  * [Base Image](https://hub.docker.com/r/openresty/openresty/)
+  
+  * [Lua Patterns](https://www.lua.org/pil/20.2.html)
