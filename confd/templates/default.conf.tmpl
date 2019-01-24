@@ -1,6 +1,7 @@
 {{- $corsAllowOrigin := getv "/corsAllowOrigin" "" -}}
 {{- $factomdUrl := getv "/factomdUrl" -}}
 {{- $healthCheckMaxBlockAge := getv "/healthCheck/maxBlockAgeInSeconds" -}}
+{{- $healthCheckClockSpreadTolerance := getv "/healthCheck/clockSpreadToleranceInSeconds" -}}
 {{- $listenPort := getv "/listenPort" "" -}}
 {{- $sslCertificate := getv "/ssl/certificate" "" -}}
 {{- $sslCiphers := getv "/ssl/ciphers" -}}
@@ -68,6 +69,7 @@ server {
     rewrite_by_lua_block {
       local config = {
         allow_origin = '{{ $corsAllowOrigin }}',
+        clock_spread_tolerance = tonumber({{ $healthCheckClockSpreadTolerance }}),
         max_block_age = tonumber({{ $healthCheckMaxBlockAge }}),
       }
 

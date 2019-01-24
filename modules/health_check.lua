@@ -1,7 +1,5 @@
 local cjson = require('cjson')
 
-local block_history = ngx.shared.health_check
-
 local function factomd_api_call(method)
   local json_rpc = {
     id = 0,
@@ -17,6 +15,10 @@ local function factomd_api_call(method)
   return ngx.location.capture('/factomd', options)
 end
 
+local function nanoseconds_to_seconds(ns)
+  return math.floor((ns / 1000000000) + 0.5)
+end
+
 local function is_status_ok(status)
   return status >= 200 and status < 300
 end
@@ -28,16 +30,53 @@ local function send_response(payload, status)
   ngx.print(json_payload)
 end
 
-local function get_block_history()
-  local block = block_history:get('block')
-  local timestamp = block_history:get('timestamp')
-
-  return block, timestamp
+local function get_response_data(res)
+  return cjson.decode(res.body).result
 end
 
-local function save_block_history(block)
-  block_history:set('block', block)
-  block_history:set('timestamp', os.time())
+local function create_data_object(arg)
+  local heights_data = get_response_data(arg.heights_res)
+  local current_minute_data = get_response_data(arg.current_minute_res)
+
+  local data = {
+    clocks = {
+      factomd = nanoseconds_to_seconds(current_minute_data.currenttime),
+      proxy = os.time(),
+      spread_tolerance = arg.config.clock_spread_tolerance,
+    },
+    current_block = {
+      max_age = arg.config.max_block_age,
+      start_time = nanoseconds_to_seconds(current_minute_data.currentblockstarttime),
+    },
+    current_minute = {
+      minute = current_minute_data.minute,
+      start_time = nanoseconds_to_seconds(current_minute_data.currentminutestarttime),
+    },
+    flags = {},
+    heights = {
+      directory_block = heights_data.directoryblockheight,
+      entry = heights_data.entryheight,
+      entry_block = heights_data.entryblockheight,
+      leader = heights_data.leaderheight,
+    },
+  }
+
+  data.flags.is_synced = data.heights.leader <= data.heights.directory_block + 1 and data.heights.leader <= data.heights.entry + 1
+
+  data.clocks.spread = math.abs(data.clocks.proxy - data.clocks.factomd)
+  data.flags.is_clock_spread_ok = data.clocks.spread <= data.clocks.spread_tolerance
+
+  if data.flags.is_synced then
+    data.current_block.age = data.clocks.proxy - data.current_block.start_time
+    data.flags.is_current_block_valid = data.current_block.age <= data.current_block.max_age
+    data.flags.is_following_minutes = data.current_minute.start_time > 0
+
+    if data.flags.is_following_minutes then
+      data.current_minute.age = data.clocks.proxy - data.current_minute.start_time
+    end
+  end
+
+  return data
 end
 
 local function go(config)
@@ -45,9 +84,10 @@ local function go(config)
 
   if not is_status_ok(heights_res.status) then
     send_response({
-      message='Error getting heights',
-      server_status= heights_res.status,
-      details= heights_res.body,
+      message = 'Error getting heights',
+      raw_responses = {
+        heights = heights_res,
+      }
     }, ngx.HTTP_SERVICE_UNAVAILABLE)
 
     return
@@ -57,74 +97,51 @@ local function go(config)
 
   if not is_status_ok(current_minute_res.status) then
     send_response({
-      message='Error getting current minute',
-      server_status= current_minute_res.status,
-      details= current_minute_res.body,
+      message = 'Error getting current minute',
+      raw_responses = {
+        heights = heights_res,
+        current_minute = current_minute_res,
+      }
     }, ngx.HTTP_SERVICE_UNAVAILABLE)
 
     return
   end
 
-  local heights = cjson.decode(heights_res.body).result
-  local directory_block_height = heights['directoryblockheight']
-  local entry_height = heights['entryheight']
-  local entry_block_height = heights['entryblockheight']
-  local leader_height = heights['leaderheight']
-
-  local current_minute = cjson.decode(current_minute_res.body).result.minute
-
-  local block_from_history, timestamp_from_history = get_block_history()
-  local max_block_age = config.max_block_age
-  local current_timestamp = os.time()
+  local data = create_data_object{heights_res=heights_res, current_minute_res=current_minute_res, config=config}
 
   local message
-  local factomd_is_healthy = true
-  local block_age = 0
+  local factomd_is_healthy = false
+
+  -- If the proxy and factomd clocks are too far apart...
+  if not data.flags.is_clock_spread_ok then
+    message = 'Proxy and factomd clocks out of sync'
 
   -- If not synced...
-  if entry_height < directory_block_height then
+  elseif not data.flags.is_synced then
     message = 'Not synced'
-    factomd_is_healthy = false
 
-  -- If no block history...
-  elseif not block_from_history then
-    save_block_history(leader_height)
-    message='First block'
+  -- If not following minutes...
+  elseif not data.flags.is_following_minutes then
+    message = 'Not following minutes'
 
-  -- If block is new...
-  elseif leader_height > block_from_history then
-    save_block_history(leader_height)
-    message='New block'
+  -- If the block is too old...
+  elseif not data.flags.is_current_block_valid then
+    message='Block expired'
 
-  -- If block hasn't expired...
-  elseif block_age <= max_block_age then
-    message='Valid block'
-    block_age = current_timestamp - timestamp_from_history
-
-  -- If block has expired...
-  elseif block_age > max_block_age then
-    message='Expired block'
-    factomd_is_healthy = false
-    block_age = current_timestamp - timestamp_from_history
-
-  -- Should never get here...
+  -- If we get here, health check passed...
   else
-    message='Unknown state'
+    message='Health check succeeded'
+    factomd_is_healthy = true
   end
 
   local status = factomd_is_healthy and ngx.HTTP_OK or ngx.HTTP_SERVICE_UNAVAILABLE
 
-  send_response({
-    message=message,
-    server_status= heights_res.status,
-    directory_block_height=directory_block_height,
-    entry_height=entry_height,
-    entry_block_height=entry_block_height,
-    leader_height=leader_height,
-    current_minute=current_minute,
-    block_age=block_age,
-    max_block_age=max_block_age,
-  }, status)
+  local response = {
+    message = message,
+    data = data,
+  }
+
+  send_response(response, status)
 end
 
 return {

@@ -6,6 +6,7 @@ mode = "0644"
 keys = [
   "/corsAllowOrigin",
   "/factomdUrl",
+  "/healthCheck/clockSpreadToleranceInSeconds",
   "/healthCheck/maxBlockAgeInSeconds",
   "/listenPort",
   "/ssl/certificate",

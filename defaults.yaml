@@ -4,6 +4,8 @@ corsAllowOrigin: null
 factomdUrl: http://localhost:8088
 
 healthCheck:
+  clockSpreadToleranceInSeconds: 10
+
   maxBlockAgeInSeconds: 1200
 
 listenPort: null
