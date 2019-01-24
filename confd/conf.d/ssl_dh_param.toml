@@ -1,0 +1,10 @@
+[template]
+src = "ssl_dh_param.pem.tmpl"
+dest = "/home/app/ssl/dhparam.pem"
+owner = "app"
+mode = "0644"
+keys = [
+  "/ssl/dhParam",
+]
+check_cmd = "/usr/bin/openresty -t"
+reload_cmd = "/usr/bin/openresty -s reload"

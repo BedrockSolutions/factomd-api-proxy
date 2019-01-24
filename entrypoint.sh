@@ -2,6 +2,16 @@
 
 set -e
 
-confd -onetime -backend env
+confd -onetime -sync-only -config-file "/home/app/confd/confd.toml"
 
-exec "$@"
+{
+  while true; do
+    inotifywait -m ~/values -e create -e modify -e delete -r |
+      while read path action file; do
+        echo "inotifywait: ${action} event on ${path}${file}"
+        confd -onetime -config-file "/home/app/confd/confd.toml"
+      done
+  done
+} &
+
+exec /usr/bin/openresty -g 'daemon off;'

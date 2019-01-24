@@ -1,8 +1,24 @@
-{{- $apiUrl := getv "/api/url" -}}
-{{- $port := getv "/port" -}}
+{{- $corsAllowOrigin := getv "/corsAllowOrigin" "" -}}
+{{- $factomdUrl := getv "/factomdUrl" -}}
+{{- $healthCheckMaxBlockAge := getv "/healthCheck/maxBlockAgeInSeconds" -}}
+{{- $healthCheckClockSpreadTolerance := getv "/healthCheck/clockSpreadToleranceInSeconds" -}}
+{{- $listenPort := getv "/listenPort" "" -}}
+{{- $sslCertificate := getv "/ssl/certificate" "" -}}
+{{- $sslCiphers := getv "/ssl/ciphers" -}}
+{{- $sslPrivateKey := getv "/ssl/privateKey" "" -}}
+{{- $sslProtocols := getv "/ssl/protocols" -}}
+
+{{- $sslEnabled := and $sslCertificate $sslPrivateKey -}}
+{{- $defaultPort := or (and $sslEnabled 8443) 8080 -}}
+{{- $port := or $listenPort $defaultPort -}}
+
+# Prevents the request body from being written to a temp file
+client_max_body_size 256k;
+client_body_buffer_size 256k;
 
 lua_package_path "$prefix/lua/?.lua;;";
 lua_code_cache on;
+lua_shared_dict health_check 128k;
 
 # Forwarded header support
 map $remote_addr $proxy_forwarded_elem {
@@ -26,18 +42,48 @@ map $http_forwarded $proxy_add_forwarded {
 }
 
 server {
-  listen {{ $port }} default_server;
+  listen {{ $port }} {{ and $sslEnabled "ssl" }} default_server;
   server_name localhost;
+
+{{ if $sslEnabled }}
+  resolver 1.1.1.1 1.0.0.1 [2606:4700:4700::1111] [2606:4700:4700::1001];
+  ssl_buffer_size 4k;
+  ssl_certificate /home/app/ssl/certificate.pem;
+  ssl_certificate_key /home/app/ssl/private_key.pem;
+  ssl_ciphers {{ $sslCiphers }};
+  ssl_dhparam /home/app/ssl/dhparam.pem;
+  ssl_prefer_server_ciphers on;
+  ssl_protocols {{ $sslProtocols }};
+  ssl_session_cache shared:TLS:2m;
+  ssl_session_tickets off;
+  ssl_session_timeout 1d;
+  ssl_stapling on;
+  ssl_stapling_verify on;
+{{ end }}
 
   # See https://blog.percy.io/tuning-nginx-behind-google-cloud-platform-http-s-load-balancer-305982ddb340
   keepalive_timeout 650;
   keepalive_requests 10000;
 
   location / {
-    rewrite_by_lua_block { require("dispatcher").go() }
+    rewrite_by_lua_block {
+      local config = {
+        allow_origin = '{{ $corsAllowOrigin }}',
+        clock_spread_tolerance = tonumber({{ $healthCheckClockSpreadTolerance }}),
+        max_block_age = tonumber({{ $healthCheckMaxBlockAge }}),
+      }
+
+      require("main").go(config)
+    }
+  }
+
+  location = /factomd {
+    internal;
 
     proxy_set_header Forwarded $proxy_add_forwarded;
+    proxy_set_header Host $host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_pass {{ $apiUrl }};
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_pass {{ $factomdUrl }}/v2;
   }
 }
