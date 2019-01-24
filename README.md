@@ -11,8 +11,9 @@ allowed origins.
 given a strong cert/key pair.
 
 * **Health check support:** The `GET /` endpoint performs tests on the underlying factomd 
-instance. This allows the API to work correctly with cloud provider infrastructure, such 
-as the Cloudflare and Google Cloud load balancers.
+instance and returns a detailed diagnostic payload. This allows the API to work correctly 
+with cloud provider load balancers, and streamlines the development of monitoring
+infrastructure.
 
 * **Strict protocol operation:** Only a very narrow range of HTTP verbs and URIs are
 passed through to factomd, increasing security.
