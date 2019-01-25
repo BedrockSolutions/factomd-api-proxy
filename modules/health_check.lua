@@ -137,6 +137,7 @@ local function go(config)
   local status = factomd_is_healthy and ngx.HTTP_OK or ngx.HTTP_SERVICE_UNAVAILABLE
 
   local response = {
+    is_healthy = factomd_is_healthy,
     message = message,
     data = data,
   }

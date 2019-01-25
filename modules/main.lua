@@ -1,14 +1,17 @@
 local cors = require('cors')
 local health_check = require('health_check')
 
-local function global_headers()
+local function global_headers(config)
   ngx.header['Content-Security-Policy'] = "default-src 'none'"
   ngx.header['Content-Type'] = 'application/json; charset=utf-8'
   ngx.header['Referrer-Policy'] = 'same-origin'
-  ngx.header['Strict-Transport-Security'] = 'max-age=63072000;'
   ngx.header['X-Content-Type-Options'] = 'nosniff'
   ngx.header['X-Frame-Options'] = 'SAMEORIGIN'
   ngx.header['X-XSS-Protection'] = '1; mode=block'
+
+  if config.ssl_enabled then
+    ngx.header['Strict-Transport-Security'] = 'max-age=63072000;'
+  end
 end
 
 local function passthrough_api_call()
@@ -29,7 +32,7 @@ local function go(config)
   local method = ngx.req.get_method()
   local uri = ngx.var.uri
 
-  global_headers()
+  global_headers(config)
 
   cors.go(config)
 

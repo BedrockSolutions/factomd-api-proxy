@@ -39,6 +39,8 @@ All configuration is done via one or more YAML configuration files mounted under
 files, and multiple directories. The `/home/app/values` directory will be recursively 
 traversed, and all files found will be merged to create the final configuration.
 
+### Primary options
+
 * **`corsAllowOrigin`:** Configures CORS. Three modes of operation are supported:
 
   * `""`: Disables CORS. This is the default
@@ -68,6 +70,15 @@ SSL will be enabled.
 * **`ssl.privateKey`:** Private key in PEM format. If this plus `ssl.certificate` are present,
 SSL will be enabled.
  
+### Secondary options
+
+* **`ssl.ciphers`:** Specifies the enabled SSL ciphers. The ciphers are specified in the 
+format understood by the OpenSSL library. The full list can be viewed by issuing the 
+`openssl ciphers` command. The default is a very selective cipher suite that gives maximum
+security.
+
+* **`ssl.dhParam`:** Specifies the Diffie-Hellman key exchange parameters. 
+
 ## Examples
 
 ### Proxy a factomd instance running on http://localhost:8088 to port 80

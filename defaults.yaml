@@ -17,7 +17,7 @@ ssl:
 
   dhParam: |
     -----BEGIN DH PARAMETERS-----
-    MIICCAKCAgEA//////////+t+FRYortKmq/cViAnPTzx2LnFg84tNpWp4TZBFGQz
+    +tMIICCAKCAgEA//////////+FRYortKmq/cViAnPTzx2LnFg84tNpWp4TZBFGQz
     +8yTnc4kmz75fS/jY2MMddj2gbICrsRhetPfHtXV/WVhJDP1H18GbtCFY2VVPe0a
     87VXE15/V8k1mE8McODmi3fipona8+/och3xWKE2rec1MKzKT0g6eXq8CrGCsyT7
     YdEIqUuyyOP7uWrat2DX9GgdT0Kj3jlN9K5W7edjcrsZCwenyO4KbXCeAvzhzffi

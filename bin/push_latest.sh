@@ -12,4 +12,4 @@ cd ${SCRIPT_DIR}/..
 
 docker build -t ${IMAGE_NAME}:${TAG} -t ${NAMESPACE}/${IMAGE_NAME}:${TAG} .
 
-docker push ${NAMESPACE}/${IMAGE_NAME}:${TAG}
+#docker push ${NAMESPACE}/${IMAGE_NAME}:${TAG}

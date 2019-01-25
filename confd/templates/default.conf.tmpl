@@ -8,7 +8,7 @@
 {{- $sslPrivateKey := getv "/ssl/privateKey" "" -}}
 {{- $sslProtocols := getv "/ssl/protocols" -}}
 
-{{- $sslEnabled := and $sslCertificate $sslPrivateKey -}}
+{{- $sslEnabled := and (gt (len $sslCertificate) 0) (gt (len $sslPrivateKey) 0) -}}
 {{- $defaultPort := or (and $sslEnabled 8443) 8080 -}}
 {{- $port := or $listenPort $defaultPort -}}
 
@@ -41,7 +41,7 @@ map $http_forwarded $proxy_add_forwarded {
 }
 
 server {
-  listen {{ $port }} {{ and $sslEnabled "ssl" }} default_server;
+  listen {{ $port }}{{ or (and $sslEnabled " ssl") "" }} default_server;
   server_name localhost;
 
 {{ if $sslEnabled }}
@@ -70,6 +70,7 @@ server {
         allow_origin = '{{ $corsAllowOrigin }}',
         clock_spread_tolerance = tonumber({{ $healthCheckClockSpreadTolerance }}),
         max_block_age = tonumber({{ $healthCheckMaxBlockAge }}),
+        ssl_enabled = {{ $sslEnabled }}
       }
 
       require("main").go(config)
