@@ -2,11 +2,16 @@
 {{- $factomdUrl := getv "/factomdUrl" -}}
 {{- $healthCheckMaxBlockAge := getv "/healthCheck/maxBlockAgeInSeconds" -}}
 {{- $healthCheckClockSpreadTolerance := getv "/healthCheck/clockSpreadToleranceInSeconds" -}}
+{{- $keepAliveRequests := getv "/keepAliveRequests" -}}
+{{- $keepAliveTimeout := getv "/keepAliveTimeout" -}}
 {{- $listenPort := getv "/listenPort" "" -}}
+{{- $sslBufferSize := getv "/ssl/bufferSize" -}}
 {{- $sslCertificate := getv "/ssl/certificate" "" -}}
 {{- $sslCiphers := getv "/ssl/ciphers" -}}
 {{- $sslPrivateKey := getv "/ssl/privateKey" "" -}}
 {{- $sslProtocols := getv "/ssl/protocols" -}}
+{{- $sslSessionCacheSize := getv "/ssl/sessionCacheSize" -}}
+{{- $sslSessionTimeout := getv "/ssl/sessionTimeout" -}}
 
 {{- $sslEnabled := and (gt (len $sslCertificate) 0) (gt (len $sslPrivateKey) 0) -}}
 {{- $defaultPort := or (and $sslEnabled 8443) 8080 -}}
@@ -46,23 +51,22 @@ server {
 
 {{ if $sslEnabled }}
   resolver 1.1.1.1 1.0.0.1 [2606:4700:4700::1111] [2606:4700:4700::1001];
-  ssl_buffer_size 4k;
+  ssl_buffer_size {{ $sslBufferSize }};
   ssl_certificate /home/app/ssl/certificate.pem;
   ssl_certificate_key /home/app/ssl/private_key.pem;
   ssl_ciphers {{ $sslCiphers }};
   ssl_dhparam /home/app/ssl/dhparam.pem;
   ssl_prefer_server_ciphers on;
   ssl_protocols {{ $sslProtocols }};
-  ssl_session_cache shared:TLS:2m;
+  ssl_session_cache shared:TLS:{{ $sslSessionCacheSize }};
   ssl_session_tickets off;
-  ssl_session_timeout 1d;
+  ssl_session_timeout {{ $sslSessionTimeout }};
   ssl_stapling on;
   ssl_stapling_verify on;
 {{ end }}
 
-  # See https://blog.percy.io/tuning-nginx-behind-google-cloud-platform-http-s-load-balancer-305982ddb340
-  keepalive_timeout 650;
-  keepalive_requests 10000;
+  keepalive_requests {{ $keepAliveRequests }};
+  keepalive_timeout {{ $keepAliveTimeout }};
 
   location / {
     rewrite_by_lua_block {

@@ -8,11 +8,16 @@ keys = [
   "/factomdUrl",
   "/healthCheck/clockSpreadToleranceInSeconds",
   "/healthCheck/maxBlockAgeInSeconds",
+  "/keepAliveRequests",
+  "/keepAliveTimeout",
   "/listenPort",
+  "/ssl/bufferSize",
   "/ssl/certificate",
   "/ssl/ciphers",
   "/ssl/privateKey",
   "/ssl/protocols",
+  "/ssl/sessionCacheSize",
+  "/ssl/sessionTimeout",
 ]
 check_cmd = "/usr/bin/openresty -t"
 reload_cmd = "/usr/bin/openresty -s reload"
