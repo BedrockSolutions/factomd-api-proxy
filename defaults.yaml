@@ -1,4 +1,7 @@
 ---
+
+clientBodyBufferSize: 256k
+
 corsAllowOrigin: null
 
 factomdUrl: http://localhost:8088
@@ -10,16 +13,21 @@ healthCheck:
 
 listenPort: null
 
+#http://nginx.org/en/docs/http/ngx_http_core_module.html#keepalive_requests
 keepAliveRequests: 10000
 
+#http://nginx.org/en/docs/http/ngx_http_core_module.html#keepalive_timeout
 # See https://blog.percy.io/tuning-nginx-behind-google-cloud-platform-http-s-load-balancer-305982ddb340
 keepAliveTimeout: 650s
 
 ssl:
+  # http://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_buffer_size
   bufferSize: 4k
 
+  # Certificate chain in PEM format
   certificate: null
 
+  # http://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_ciphers
   ciphers: ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384
 
   dhParam: |
@@ -37,11 +45,15 @@ ssl:
     bLVKdMtyyt1eS4UKbu+c4sWyCTQ/+clM7PnViRXUvyVyalG5ySHIuaMCAQI=
     -----END DH PARAMETERS-----
 
-  privateKey: null
+  # Private key in PEM format
+  certificateKey: null
 
+  # http://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_protocols
   protocols: TLSv1.2
 
+  # http://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_session_cache
   sessionCacheSize: 2m
 
+  # http://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_timeout
   sessionTimeout: 1d
 ...

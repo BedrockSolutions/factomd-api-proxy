@@ -1,3 +1,4 @@
+{{- $clientBodyBufferSize := getv "/clientBodyBufferSize" -}}
 {{- $corsAllowOrigin := getv "/corsAllowOrigin" "" -}}
 {{- $factomdUrl := getv "/factomdUrl" -}}
 {{- $healthCheckMaxBlockAge := getv "/healthCheck/maxBlockAgeInSeconds" -}}
@@ -8,18 +9,15 @@
 {{- $sslBufferSize := getv "/ssl/bufferSize" -}}
 {{- $sslCertificate := getv "/ssl/certificate" "" -}}
 {{- $sslCiphers := getv "/ssl/ciphers" -}}
-{{- $sslPrivateKey := getv "/ssl/privateKey" "" -}}
+{{- $sslCertificateKey := getv "/ssl/certificateKey" "" -}}
 {{- $sslProtocols := getv "/ssl/protocols" -}}
 {{- $sslSessionCacheSize := getv "/ssl/sessionCacheSize" -}}
 {{- $sslSessionTimeout := getv "/ssl/sessionTimeout" -}}
 
-{{- $sslEnabled := and (gt (len $sslCertificate) 0) (gt (len $sslPrivateKey) 0) -}}
+{{- $sslEnabled := and (gt (len $sslCertificate) 0) (gt (len $sslCertificateKey) 0) -}}
 {{- $defaultPort := or (and $sslEnabled 8443) 8080 -}}
 {{- $port := or $listenPort $defaultPort -}}
 
-# Prevents the request body from being written to a temp file
-client_max_body_size 256k;
-client_body_buffer_size 256k;
 
 lua_package_path "$prefix/lua/?.lua;;";
 lua_code_cache on;
@@ -53,7 +51,7 @@ server {
   resolver 1.1.1.1 1.0.0.1 [2606:4700:4700::1111] [2606:4700:4700::1001];
   ssl_buffer_size {{ $sslBufferSize }};
   ssl_certificate /home/app/ssl/certificate.pem;
-  ssl_certificate_key /home/app/ssl/private_key.pem;
+  ssl_certificate_key /home/app/ssl/certificate_key.pem;
   ssl_ciphers {{ $sslCiphers }};
   ssl_dhparam /home/app/ssl/dhparam.pem;
   ssl_prefer_server_ciphers on;
@@ -65,6 +63,12 @@ server {
   ssl_stapling_verify on;
 {{ end }}
 
+  # Prevents the request body from being written to a temp file
+  client_body_in_single_buffer on;
+  client_max_body_size {{ $clientBodyBufferSize }};
+  client_body_buffer_size {{ $clientBodyBufferSize }};
+
+  # Prevents issues when running behind load balancers
   keepalive_requests {{ $keepAliveRequests }};
   keepalive_timeout {{ $keepAliveTimeout }};
 

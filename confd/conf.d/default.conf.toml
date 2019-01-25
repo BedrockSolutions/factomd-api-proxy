@@ -4,6 +4,7 @@ dest = "/home/app/default.conf"
 owner = "app"
 mode = "0644"
 keys = [
+  "/clientBodyBufferSize",
   "/corsAllowOrigin",
   "/factomdUrl",
   "/healthCheck/clockSpreadToleranceInSeconds",
@@ -14,7 +15,7 @@ keys = [
   "/ssl/bufferSize",
   "/ssl/certificate",
   "/ssl/ciphers",
-  "/ssl/privateKey",
+  "/ssl/certificateKey",
   "/ssl/protocols",
   "/ssl/sessionCacheSize",
   "/ssl/sessionTimeout",

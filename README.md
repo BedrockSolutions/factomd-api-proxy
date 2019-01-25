@@ -64,10 +64,10 @@ traversed, and all files found will be merged to create the final configuration.
 * **`listenPort`:** The port the proxy will listen on. Defaults to `8080` for non-SSL operation,
 and `8443` when SSL is enabled.
 
-* **`ssl.certificate`:** Certificate chain in PEM format. If this plus `ssl.privateKey` are present,
+* **`ssl.certificate`:** Certificate chain in PEM format. If this plus `ssl.certificateKey` are present,
 SSL will be enabled.
  
-* **`ssl.privateKey`:** Private key in PEM format. If this plus `ssl.certificate` are present,
+* **`ssl.certificateKey`:** Private key in PEM format. If this plus `ssl.certificate` are present,
 SSL will be enabled.
  
 ### Secondary options
@@ -136,7 +136,7 @@ ssl:
     ...certificate in the chain goes here...
     -----END CERTIFICATE-----
   
-  privateKey: |-
+  certificateKey: |-
     -----BEGIN PRIVATE KEY-----
     ...private key goes here...
     -----END PRIVATE KEY-----
