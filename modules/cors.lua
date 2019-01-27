@@ -92,10 +92,10 @@ local function go(config)
   if method == 'OPTIONS' then
     handle_options(allow_origin, origin)
 
-  elseif (method == 'GET' and uri == '/') then
+  elseif method == 'GET' and uri == '/' then
     handle_get_and_post(allow_origin, origin)
 
-  elseif (method == 'POST' and uri == '/v2') then
+  elseif method == 'POST' and uri == '/v2' then
     handle_get_and_post(allow_origin, origin)
   end
 end

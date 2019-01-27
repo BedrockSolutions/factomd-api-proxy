@@ -1,4 +1,5 @@
 local cjson = require('cjson')
+local is_status_ok = require('shared').is_status_ok
 
 local function factomd_api_call(method)
   local json_rpc = {
@@ -17,10 +18,6 @@ end
 
 local function nanoseconds_to_seconds(ns)
   return math.floor((ns / 1000000000) + 0.5)
-end
-
-local function is_status_ok(status)
-  return status >= 200 and status < 300
 end
 
 local function send_response(payload, status)

@@ -47,6 +47,18 @@ server {
   listen {{ $port }}{{ or (and $sslEnabled " ssl") "" }} default_server;
   server_name localhost;
 
+  access_log off;
+  error_log stderr info;
+
+  # Prevents the request body from being written to a temp file
+  client_body_in_single_buffer on;
+  client_max_body_size {{ $clientBodyBufferSize }};
+  client_body_buffer_size {{ $clientBodyBufferSize }};
+
+  # Prevents issues when running behind load balancers
+  keepalive_requests {{ $keepAliveRequests }};
+  keepalive_timeout {{ $keepAliveTimeout }};
+
 {{ if $sslEnabled }}
   resolver 1.1.1.1 1.0.0.1 [2606:4700:4700::1111] [2606:4700:4700::1001];
   ssl_buffer_size {{ $sslBufferSize }};
@@ -63,15 +75,6 @@ server {
   ssl_stapling_verify on;
 {{ end }}
 
-  # Prevents the request body from being written to a temp file
-  client_body_in_single_buffer on;
-  client_max_body_size {{ $clientBodyBufferSize }};
-  client_body_buffer_size {{ $clientBodyBufferSize }};
-
-  # Prevents issues when running behind load balancers
-  keepalive_requests {{ $keepAliveRequests }};
-  keepalive_timeout {{ $keepAliveTimeout }};
-
   location / {
     rewrite_by_lua_block {
       local config = {
@@ -81,7 +84,7 @@ server {
         ssl_enabled = {{ $sslEnabled }}
       }
 
-      require("main").go(config)
+      require('rewrite_by_lua').go(config)
     }
   }
 
