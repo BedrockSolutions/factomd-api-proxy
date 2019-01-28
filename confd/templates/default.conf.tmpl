@@ -84,7 +84,7 @@ server {
         ssl_enabled = {{ $sslEnabled }}
       }
 
-      require('rewrite_by_lua').go(config)
+      require('main').go(config)
     }
   }
 

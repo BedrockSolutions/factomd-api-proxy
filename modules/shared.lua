@@ -1,7 +1,7 @@
 local cjson = require('cjson')
 
 local function get_header(name)
-  return ngx.req.get_headers()[name] or ''
+  return ngx.req.get_headers()[name]
 end
 
 local function get_json_rpc_request()

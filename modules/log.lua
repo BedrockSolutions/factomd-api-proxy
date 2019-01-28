@@ -1,34 +1,32 @@
 local shared = require('shared')
-local get_json_rpc_request = shared.get_json_rpc_request
+local get_header = shared.get_header
 local is_status_ok = shared.is_status_ok
 
-local function go(config, globals)
-  local method = ngx.req.get_method()
+local function go(config, request)
   local status = ngx.status
-  local uri = ngx.var.uri
 
   local message = ''
-  if method == 'OPTIONS' and (uri == '/' or uri == '/v2') then
-    local allowed_origin = ngx.header['Access-Control-Allow-Origin'] or 'DENIED'
-    message = string.format('CORS Allowed Origin: %s', allowed_origin)
+  if request.error then
+    message = string.format('Request Error: %s', request.error)
 
-  elseif method == 'GET' and uri == '/' then
+  elseif request.is_cors_preflight then
+    local origin = get_header('Origin') or 'Unknown'
+    local allowed_origin = ngx.header['Access-Control-Allow-Origin'] and 'ALLOWED' or 'DENIED'
+    message = string.format('CORS Preflight: %s -> %s', origin, allowed_origin)
+
+  elseif request.is_health_check then
     local health_check_result = is_status_ok(status) and 'PASSED' or 'FAILED'
-    message = string.format('Health Check Result: %s', health_check_result)
+    message = string.format('Health Check: %s', health_check_result)
 
-  elseif method == 'POST' and uri == '/v2' then
-    if globals.is_rpc_request_valid then
-      message = string.format('RPC Request Method: %s', get_json_rpc_request().method)
-    else
-      message = string.format('RPC Request Invalid: %s', globals.rpc_request_validation_error)
-    end
+  elseif request.is_api_call then
+    message = string.format('API Call: %s', request.json_rpc_call.method)
 
   else
-    message = 'Invalid Request'
+    message = 'Logging Invariant Violation'
   end
 
-  local log_level = is_status_ok(status) and ngx.NOTICE or ngx.WARN
-  ngx.log(log_level, string.format('status: %d, details: "%s"', ngx.status, message))
+  local log_level = is_status_ok(status) and ngx.INFO or ngx.NOTICE
+  ngx.log(log_level, string.format('status: %d, details: "%s"', status, message))
 end
 
 return {

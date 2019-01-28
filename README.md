@@ -15,8 +15,10 @@ instance and returns a detailed diagnostic payload. This allows the API to work 
 with cloud provider load balancers, and streamlines the development of monitoring
 infrastructure.
 
+* **Detailed logging:** API method names are logged, along with the usual information.
+
 * **Strict protocol operation:** Only a very narrow range of HTTP verbs and URIs are
-passed through to factomd, increasing security.
+passed through to factomd.
 
 * **Dynamic reconfiguration:** Edits to the YAML configuration files will cause an automatic
 reload of the Nginx configuration, eliminating the need to restart the container in most cases.
