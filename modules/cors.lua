@@ -69,7 +69,7 @@ local function handle_options(allow_origin, origin)
   set_common_cors_headers(allow_origin, origin)
   ngx.header['Access-Control-Allow-Headers'] = get_header('Access-Control-Request-Headers')
 
-  options_body('Origin %s is allowed', origin)
+  options_body('Origin %s is allowed', (origin or 'Unknown'))
 end
 
 local function handle_get_and_post(allow_origin, origin)
@@ -78,24 +78,19 @@ local function handle_get_and_post(allow_origin, origin)
   end
 end
 
-local function go(config)
+local function go(config, request)
   local allow_origin = config.allow_origin
 
   if is_cors_disabled(allow_origin) then
     return
   end
 
-  local method = ngx.req.get_method()
   local origin = get_header('Origin')
-  local uri = ngx.var.uri
 
-  if method == 'OPTIONS' then
+  if request.is_cors_preflight then
     handle_options(allow_origin, origin)
 
-  elseif (method == 'GET' and uri == '/') then
-    handle_get_and_post(allow_origin, origin)
-
-  elseif (method == 'POST' and uri == '/v2') then
+  elseif request.is_health_check or request.is_api_call then
     handle_get_and_post(allow_origin, origin)
   end
 end

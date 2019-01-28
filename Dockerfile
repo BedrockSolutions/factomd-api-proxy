@@ -2,7 +2,7 @@ FROM openresty/openresty:stretch
 
 RUN set -xe && \
   apt-get update && \
-  apt-get --no-install-recommends -y install inotify-tools procps && \
+  apt-get --no-install-recommends -y install inotify-tools && \
   groupadd -g 1000 app && \
   useradd -r -m -u 1000 -g app app && \
   ln -fs /home/app/default.conf /etc/nginx/conf.d/default.conf && \

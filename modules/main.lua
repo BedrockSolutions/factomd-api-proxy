@@ -1,52 +1,42 @@
+local api_call = require('api_call')
 local cors = require('cors')
 local health_check = require('health_check')
+local log = require('log')
+local parse_and_validate_request = require('parse_and_validate_request')
 
-local function global_headers()
+local function global_headers(ssl_enabled)
   ngx.header['Content-Security-Policy'] = "default-src 'none'"
   ngx.header['Content-Type'] = 'application/json; charset=utf-8'
   ngx.header['Referrer-Policy'] = 'same-origin'
-  ngx.header['Strict-Transport-Security'] = 'max-age=63072000;'
   ngx.header['X-Content-Type-Options'] = 'nosniff'
   ngx.header['X-Frame-Options'] = 'SAMEORIGIN'
   ngx.header['X-XSS-Protection'] = '1; mode=block'
-end
 
-local function passthrough_api_call()
-  local options = {
-    always_forward_body = true,
-    method = ngx.HTTP_POST,
-  }
-
-  ngx.req.read_body()
-  local res = ngx.location.capture('/factomd', options)
-
-  ngx.status = res.status
-  ngx.header['Content-Length'] = res.header['Content-Length']
-  ngx.print(res.body)
+  if ssl_enabled then
+    ngx.header['Strict-Transport-Security'] = 'max-age=63072000;'
+  end
 end
 
 local function go(config)
-  local method = ngx.req.get_method()
-  local uri = ngx.var.uri
+  local is_request_valid, request = pcall(parse_and_validate_request.go, config)
 
-  global_headers()
+  global_headers(config.ssl_enabled)
+  cors.go(config, request)
 
-  cors.go(config)
+  if is_request_valid then
+    if request.is_health_check then
+      health_check.go(config, request)
 
-  if uri == '/' and method == 'GET' then
-    health_check.go(config)
-    ngx.exit(ngx.OK)
-
-  elseif (uri == '/' or uri == '/v2') and method == 'OPTIONS' then
-    ngx.exit(ngx.HTTP_OK)
-
-  elseif uri == '/v2' and method == 'POST' then
-    passthrough_api_call()
-    ngx.exit(ngx.OK)
-
+    elseif request.is_api_call then
+      api_call.go(config, request)
+    end
   else
-    ngx.exit(ngx.HTTP_NOT_FOUND)
+    ngx.status = ngx.HTTP_BAD_REQUEST
+    ngx.print(string.format('{ "error": "%s" }', request.error))
   end
+
+  log.go(config, request)
+  ngx.exit(ngx.status)
 end
 
 return {

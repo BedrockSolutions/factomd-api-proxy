@@ -4,15 +4,21 @@ dest = "/home/app/default.conf"
 owner = "app"
 mode = "0644"
 keys = [
+  "/clientBodyBufferSize",
   "/corsAllowOrigin",
   "/factomdUrl",
   "/healthCheck/clockSpreadToleranceInSeconds",
   "/healthCheck/maxBlockAgeInSeconds",
+  "/keepAliveRequests",
+  "/keepAliveTimeout",
   "/listenPort",
+  "/ssl/bufferSize",
   "/ssl/certificate",
   "/ssl/ciphers",
-  "/ssl/privateKey",
+  "/ssl/certificateKey",
   "/ssl/protocols",
+  "/ssl/sessionCacheSize",
+  "/ssl/sessionTimeout",
 ]
 check_cmd = "/usr/bin/openresty -t"
 reload_cmd = "/usr/bin/openresty -s reload"
