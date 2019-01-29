@@ -74,12 +74,25 @@ SSL will be enabled.
  
 ### Secondary options
 
+* **`nginx.clientBodyBufferSize`:** Specifies the size and the max size of the client
+request buffer. The default should be plenty generous for the vast majority of API
+operations.
+
+* **`nginx.keepAliveRequests`:** Sets the maximum number of requests that can be served 
+through one keep-alive connection. After the maximum number of requests are made, the 
+connection is closed. The default value is tuned so that the proxy will work correctly
+behind cloud load balancers.
+
+* **`nginx.keepAliveTimeout`:** Sets a timeout during which a keep-alive client 
+connection will stay open on the server side. The default value is tuned so that 
+the proxy will work correctly behind cloud load balancers.
+
 * **`ssl.ciphers`:** Specifies the enabled SSL ciphers. The ciphers are specified in the 
 format understood by the OpenSSL library. The full list can be viewed by issuing the 
 `openssl ciphers` command. The default is a very selective cipher suite that gives maximum
 security.
 
-* **`ssl.dhParam`:** Specifies the Diffie-Hellman key exchange parameters. 
+* **`ssl.dhParam`:** Specifies the Diffie-Hellman key exchange parameters in PEM format.
 
 ## Examples
 

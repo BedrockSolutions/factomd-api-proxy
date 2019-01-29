@@ -1,10 +1,11 @@
-{{- $clientBodyBufferSize := getv "/clientBodyBufferSize" -}}
+{{- $accessControlList := getv "/accessControlList" "" -}}
+{{- $clientBodyBufferSize := getv "/nginx/clientBodyBufferSize" -}}
 {{- $corsAllowOrigin := getv "/corsAllowOrigin" "" -}}
 {{- $factomdUrl := getv "/factomdUrl" -}}
 {{- $healthCheckMaxBlockAge := getv "/healthCheck/maxBlockAgeInSeconds" -}}
 {{- $healthCheckClockSpreadTolerance := getv "/healthCheck/clockSpreadToleranceInSeconds" -}}
-{{- $keepAliveRequests := getv "/keepAliveRequests" -}}
-{{- $keepAliveTimeout := getv "/keepAliveTimeout" -}}
+{{- $keepAliveRequests := getv "/nginx/keepAliveRequests" -}}
+{{- $keepAliveTimeout := getv "/nginx/keepAliveTimeout" -}}
 {{- $listenPort := getv "/listenPort" "" -}}
 {{- $sslBufferSize := getv "/ssl/bufferSize" -}}
 {{- $sslCertificate := getv "/ssl/certificate" "" -}}
@@ -74,6 +75,12 @@ server {
   ssl_stapling on;
   ssl_stapling_verify on;
 {{ end }}
+
+{{ if $accessControlList -}}
+{{- range split $accessControlList "\n" }}
+  {{ . }};
+{{- end -}}
+{{- end }}
 
   location / {
     rewrite_by_lua_block {

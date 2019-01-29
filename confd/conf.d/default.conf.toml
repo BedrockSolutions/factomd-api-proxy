@@ -4,14 +4,15 @@ dest = "/home/app/default.conf"
 owner = "app"
 mode = "0644"
 keys = [
-  "/clientBodyBufferSize",
+  "/accessControlList",
   "/corsAllowOrigin",
   "/factomdUrl",
   "/healthCheck/clockSpreadToleranceInSeconds",
   "/healthCheck/maxBlockAgeInSeconds",
-  "/keepAliveRequests",
-  "/keepAliveTimeout",
   "/listenPort",
+  "/nginx/clientBodyBufferSize",
+  "/nginx/keepAliveRequests",
+  "/nginx/keepAliveTimeout",
   "/ssl/bufferSize",
   "/ssl/certificate",
   "/ssl/ciphers",

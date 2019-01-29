@@ -51,7 +51,7 @@ local function validate_request_body(request)
       request.body = body
       request.json_rpc_call = rpc_call_or_error
     end
-  elseif request.body then
+  elseif body then
     request.error = 'No request body is allowed when making health check or preflight requests'
   end
 
