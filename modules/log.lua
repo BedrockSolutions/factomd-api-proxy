@@ -2,9 +2,13 @@ local shared = require('shared')
 local get_header = shared.get_header
 local is_status_ok = shared.is_status_ok
 
-local function go(config, request)
+local function log_entry(details)
   local status = ngx.status
+  local log_level = is_status_ok(status) and ngx.INFO or ngx.NOTICE
+  ngx.log(log_level, string.format('status: %d, details: "%s"', status, details))
+end
 
+local function log_request(request)
   local message = ''
   if request.error then
     message = string.format('Request Error: %s', request.error)
@@ -15,7 +19,7 @@ local function go(config, request)
     message = string.format('CORS Preflight: %s -> %s', origin, allowed_origin)
 
   elseif request.is_health_check then
-    local health_check_result = is_status_ok(status) and 'PASSED' or 'FAILED'
+    local health_check_result = is_status_ok(ngx.status) and 'PASSED' or 'FAILED'
     message = string.format('Health Check: %s', health_check_result)
 
   elseif request.is_api_call then
@@ -25,10 +29,10 @@ local function go(config, request)
     message = 'Logging Invariant Violation'
   end
 
-  local log_level = is_status_ok(status) and ngx.INFO or ngx.NOTICE
-  ngx.log(log_level, string.format('status: %d, details: "%s"', status, message))
+  log_entry(message)
 end
 
 return {
-  go = go,
+  log_entry = log_entry,
+  log_request = log_request,
 }

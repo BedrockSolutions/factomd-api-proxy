@@ -4,7 +4,7 @@ dest = "/home/app/default.conf"
 owner = "app"
 mode = "0644"
 keys = [
-  "/accessControlList",
+  "/accessControlWhitelist",
   "/corsAllowOrigin",
   "/factomdUrl",
   "/healthCheck/clockSpreadToleranceInSeconds",

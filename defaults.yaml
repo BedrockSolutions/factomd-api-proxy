@@ -1,5 +1,6 @@
 ---
-accessControlList: null
+accessControlWhitelist:
+  - 0.0.0.0/0
 
 corsAllowOrigin: null
 

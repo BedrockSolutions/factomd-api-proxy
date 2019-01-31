@@ -1,4 +1,4 @@
-{{- $accessControlList := getv "/accessControlList" "" -}}
+{{- $accessControlWhitelist := getvs "/accessControlWhitelist/*" -}}
 {{- $clientBodyBufferSize := getv "/nginx/clientBodyBufferSize" -}}
 {{- $corsAllowOrigin := getv "/corsAllowOrigin" "" -}}
 {{- $factomdUrl := getv "/factomdUrl" -}}
@@ -18,7 +18,6 @@
 {{- $sslEnabled := and (gt (len $sslCertificate) 0) (gt (len $sslCertificateKey) 0) -}}
 {{- $defaultPort := or (and $sslEnabled 8443) 8080 -}}
 {{- $port := or $listenPort $defaultPort -}}
-
 
 lua_package_path "$prefix/lua/?.lua;;";
 lua_code_cache on;
@@ -42,6 +41,16 @@ map $http_forwarded $proxy_add_forwarded {
 
   # Otherwise, replace it
   default "$proxy_forwarded_elem";
+}
+
+init_by_lua_block {
+  local access_control_whitelist = {
+{{- range $accessControlWhitelist -}}
+    "{{ . }}",
+{{- end -}}
+  }
+
+  require('access_control').init_whitelist(access_control_whitelist)
 }
 
 server {
@@ -75,12 +84,6 @@ server {
   ssl_stapling on;
   ssl_stapling_verify on;
 {{ end }}
-
-{{ if $accessControlList -}}
-{{- range split $accessControlList "\n" }}
-  {{ . }};
-{{- end -}}
-{{- end }}
 
   location / {
     rewrite_by_lua_block {
