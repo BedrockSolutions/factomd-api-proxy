@@ -53,6 +53,7 @@ const jsonRpcSchema = {
   ]
 }
 
-validJsonRpc = pm.test(`Response is valid JSON RPC`, () => pm.response.to.have.jsonSchema(jsonRpcSchema));
+validJsonRpc = () =>
+  pm.test(`Response is valid JSON RPC`, () => pm.response.to.have.jsonSchema(jsonRpcSchema));
 
 console.log('finished load of testing lib');
