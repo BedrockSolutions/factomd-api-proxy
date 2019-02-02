@@ -1,18 +1,16 @@
 console.log('beginning load of testing lib');
 
-const statusIs = code =>
+statusIs = code =>
   pm.test(`Status code is ${code}`, () => pm.response.to.have.status(code));
 
-const ok = () => statusIs(200);
+ok = () => statusIs(200);
 
-const badRequest = () => statusIs(400);
+badRequest = () => statusIs(400);
 
-const forbidden = () => statusIs(403);
+forbidden = () => statusIs(403);
 
-const notFound = () => statusIs(404);
+notFound = () => statusIs(404);
 
-const serviceUnavailable = () => statusIs(503);
-
-const isTestLibLoaded = true;
+serviceUnavailable = () => statusIs(503);
 
 console.log('finished load of testing lib');
