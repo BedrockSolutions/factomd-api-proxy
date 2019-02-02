@@ -9,4 +9,4 @@ const forbidden = () => statusIs(403)
 
 const notFound = () => statusIs(404)
 
-const serviceUnavailable = () => statusIs(500)
+const serviceUnavailable = () => statusIs(503)
