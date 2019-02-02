@@ -10,3 +10,5 @@ const forbidden = () => statusIs(403)
 const notFound = () => statusIs(404)
 
 const serviceUnavailable = () => statusIs(503)
+
+const isTestLibLoaded = true
