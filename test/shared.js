@@ -25,9 +25,6 @@ serviceUnavailable = () => statusIs(503);
 /*
  * JSON RPC validation
  */
-const Ajv = require('ajv');
-const ajv = new Ajv({logger: console});
-
 const jsonRpcSchema = {
   type: 'object',
   properties: {
