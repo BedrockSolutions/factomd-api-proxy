@@ -1,49 +1,93 @@
+local cjson = require('cjson')
+
 local access_control = require('access_control')
 local api_call = require('api_call')
 local cors = require('cors')
 local health_check = require('health_check')
 local log = require('log')
 local parse_and_validate_request = require('parse_and_validate_request')
+local is_response_error = require('shared').is_response_error
 
-local function global_headers(ssl_enabled)
-  ngx.header['Content-Security-Policy'] = "default-src 'none'"
-  ngx.header['Content-Type'] = 'application/json; charset=utf-8'
-  ngx.header['Referrer-Policy'] = 'same-origin'
-  ngx.header['X-Content-Type-Options'] = 'nosniff'
-  ngx.header['X-Frame-Options'] = 'SAMEORIGIN'
-  ngx.header['X-XSS-Protection'] = '1; mode=block'
+local function global_headers(ssl_enabled, response)
+  response.headers['Content-Security-Policy'] = "default-src 'none'"
+  response.headers['Content-Type'] = 'application/json; charset=utf-8'
+  response.headers['Referrer-Policy'] = 'same-origin'
+  response.headers['X-Content-Type-Options'] = 'nosniff'
+  response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+  response.headers['X-XSS-Protection'] = '1; mode=block'
 
   if ssl_enabled then
-    ngx.header['Strict-Transport-Security'] = 'max-age=63072000;'
+    response.headers['Strict-Transport-Security'] = 'max-age=63072000;'
   end
 end
 
-local function go(config)
-  if access_control.is_access_allowed() then
-    local is_request_valid, request = pcall(parse_and_validate_request.go, config)
+local function init_request_object()
+  return {
+    body = nil,
+    client_ip = ngx.var.remote_addr,
+    is_health_check = false,
+    is_cors_preflight = false,
+    is_api_call = false,
+    json_rpc = nil,
+  }
+end
 
-    global_headers(config.ssl_enabled)
-    cors.go(config, request)
+local function init_response_object()
+  return {
+    headers = {},
+    status = nil,
+    json_rpc = {
+      id = 'null',
+      jsonrpc = '2.0',
+      error = nil,
+      result = nil,
+    },
+    raw_body = nil,
+  }
+end
 
-    if is_request_valid then
-      if request.is_health_check then
-        health_check.go(config, request)
+local function send_response(response)
+  ngx.status = response.status or 520 -- Unknown error
 
-      elseif request.is_api_call then
-        api_call.go(config, request)
-      end
-    else
-      ngx.status = ngx.HTTP_BAD_REQUEST
-      ngx.print(string.format('{ "error": "%s" }', request.error))
-    end
+  local response_json = response.raw_body or cjson.encode(response.json_rpc)
 
-    log.log_request(request)
-  else
-    ngx.status = ngx.HTTP_FORBIDDEN
-    log.log_entry(string.format('Access denied for IP address %s', ngx.var.remote_addr))
+  ngx.header['Content-Length'] = string.len(response_json)
+
+  for header, value in pairs(response.headers) do
+    ngx.header[header] = value
   end
 
-  ngx.exit(ngx.status)
+  ngx.print(response_json)
+  ngx.exit(response.status)
+end
+
+local function go(config)
+  local request = init_request_object()
+  local response = init_response_object()
+
+  access_control.check_access(request, response)
+
+  if not is_response_error(response) then
+    pcall(parse_and_validate_request.go, request, response)
+
+    global_headers(config.ssl_enabled, response)
+    cors.go(config, request, response)
+
+    if not is_response_error(response) then
+      if request.is_health_check then
+        health_check.go(config, response)
+
+      elseif request.is_api_call then
+        api_call.go(request, response)
+      end
+    end
+
+--    log.log_request(request)
+  else
+--    log.log_entry(string.format('Access DENIED for IP address %s', request.client_ip))
+  end
+
+  send_response(response)
 end
 
 return {

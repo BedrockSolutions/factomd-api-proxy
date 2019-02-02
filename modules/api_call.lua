@@ -1,14 +1,13 @@
-local function go(config, request)
+local function go(request, response)
   local options = {
     body = request.body,
     method = ngx.HTTP_POST,
   }
 
-  local response = ngx.location.capture('/factomd', options)
+  local api_response = ngx.location.capture('/factomd', options)
 
-  ngx.status = response.status
-  ngx.header['Content-Length'] = response.header['Content-Length']
-  ngx.print(response.body)
+  response.status = api_response.status
+  response.raw_body = api_response.body
 end
 
 return {

@@ -2,14 +2,13 @@ local shared = require('shared')
 local get_header = shared.get_header
 local is_status_ok = shared.is_status_ok
 
-local function log_entry(details)
-  local status = ngx.status
-  local log_level = is_status_ok(status) and ngx.INFO or ngx.NOTICE
-  ngx.log(log_level, string.format('status: %d, details: "%s"', status, details))
+local function log_entry(arg)
+  local log_level = is_status_ok(arg.status) and ngx.INFO or ngx.NOTICE
+  ngx.log(log_level, string.format('status: %d, message: "%s"', arg.status, arg.message))
 end
 
-local function log_request(request)
-  local message = ''
+local function log_request(request, response)
+  local message
   if request.error then
     message = string.format('Request Error: %s', request.error)
 
@@ -29,7 +28,7 @@ local function log_request(request)
     message = 'Logging Invariant Violation'
   end
 
-  log_entry(message)
+  log_entry{}
 end
 
 return {

@@ -1,5 +1,9 @@
 local cjson = require('cjson')
-local is_status_ok = require('shared').is_status_ok
+
+local shared = require('shared')
+local is_status_ok = shared.is_status_ok
+local set_response_error = shared.set_response_error
+local set_response_message = shared.set_response_message
 
 local function factomd_api_call(method)
   local json_rpc = {
@@ -76,31 +80,20 @@ local function create_data_object(arg)
   return data
 end
 
-local function go(config)
+local function go(config, response)
   local heights_res = factomd_api_call('heights')
 
   if not is_status_ok(heights_res.status) then
-    send_response({
-      message = 'Error getting heights',
-      rawResponses = {
-        heights = heights_res,
-      }
-    }, ngx.HTTP_SERVICE_UNAVAILABLE)
-
+    local data = { heightsResponse = heights_res }
+    set_response_error{response=response, code=-32603, data=data, message='Error getting heights', status=ngx.HTTP_SERVICE_UNAVAILABLE}
     return
   end
 
   local current_minute_res = factomd_api_call('current-minute')
 
   if not is_status_ok(current_minute_res.status) then
-    send_response({
-      message = 'Error getting current minute',
-      rawResponses = {
-        heights = heights_res,
-        currentMinute = current_minute_res,
-      }
-    }, ngx.HTTP_SERVICE_UNAVAILABLE)
-
+    local data = { heightsResponse = heights_res, currentMinuteResponse = current_minute_res }
+    set_response_error{response=response, code=-32603, data=data, message='Error getting current minute', status=ngx.HTTP_SERVICE_UNAVAILABLE}
     return
   end
 
@@ -131,15 +124,13 @@ local function go(config)
     factomd_is_healthy = true
   end
 
-  local status = factomd_is_healthy and ngx.HTTP_OK or ngx.HTTP_SERVICE_UNAVAILABLE
+  response.status = factomd_is_healthy and ngx.HTTP_OK or ngx.HTTP_SERVICE_UNAVAILABLE
 
-  local response = {
+  response.json_rpc.result = {
     isHealthy = factomd_is_healthy,
     message = message,
     data = data,
   }
-
-  send_response(response, status)
 end
 
 return {

@@ -1,19 +1,23 @@
 local ip_utils = require("ip_utils")
+local set_response_error = require('shared').set_response_error
 
 local whitelist
 
 local function init_whitelist(whitelist_ips)
-  ngx.log(ngx.NOTICE, 'in access_control init_whitelist')
   ip_utils.enable_lrucache()
   whitelist = ip_utils.parse_cidrs(whitelist_ips)
 end
 
-local function is_access_allowed()
-  ngx.log(ngx.NOTICE, 'in check access')
-  return ip_utils.ip_in_cidrs(ngx.var.remote_addr, whitelist)
+local function check_access(request, response)
+  local is_access_allowed = ip_utils.ip_in_cidrs(request.client_ip, whitelist)
+
+  if not is_access_allowed then
+    local data = { clientIp = request.client_ip }
+    set_response_error{response=response, code=-32600, data=data, message='Access Denied', status=ngx.HTTP_FORBIDDEN}
+  end
 end
 
 return {
   init_whitelist = init_whitelist,
-  is_access_allowed = is_access_allowed,
+  check_access = check_access,
 }

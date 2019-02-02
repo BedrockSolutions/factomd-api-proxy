@@ -1,0 +1,12 @@
+const statusIs = code =>
+  pm.test(`Status code is ${code}`, () => pm.response.to.have.status(code))
+
+const ok = () => statusIs(200)
+
+const badRequest = () => statusIs(400)
+
+const forbidden = () => statusIs(403)
+
+const notFound = () => statusIs(404)
+
+const serviceUnavailable = () => statusIs(500)
