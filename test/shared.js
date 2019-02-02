@@ -9,7 +9,7 @@ const badRequest = () => statusIs(400)
 
 const forbidden = () => statusIs(403)
 
-const notFound = () => statusIs(404)
+notFound = () => statusIs(404)
 
 const serviceUnavailable = () => statusIs(503)
 
