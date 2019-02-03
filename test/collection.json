@@ -1,0 +1,811 @@
+{
+	"info": {
+		"_postman_id": "20e670c5-cb6a-4bb7-ab7c-3a1c6ceb398d",
+		"name": "factomd-api-proxy",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Good health check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c40dfe0f-ef6f-4da6-9d28-9eac0e1e637a",
+								"exec": [
+									"eval(pm.globals.get(\"factomd-api-proxy-js\"));",
+									"",
+									"ok();",
+									"",
+									"jsonRpcIsValid();",
+									"",
+									"healthCheckIsGood();",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}",
+							"host": [
+								"{{url}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Wrong HTTP verb",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b7f35443-9e8b-4934-a3f6-dc9d9b1184f5",
+								"exec": [
+									"eval(pm.globals.get(\"factomd-api-proxy-js\"));",
+									"",
+									"notFound();",
+									"",
+									"jsonRpcIsValid();",
+									"",
+									"jsonKeyIncludes('error', {",
+									"    code: -32600,",
+									"    data: {",
+									"        method: 'POST',",
+									"        uri: '/',",
+									"    },",
+									"    message: 'Unsupported method & uri combination',",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}",
+							"host": [
+								"{{url}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CORS preflight, no Origin header",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "4bcb4169-2d97-4021-ace6-cc267eb895d5",
+								"exec": [
+									"eval(pm.globals.get(\"factomd-api-proxy-js\"));",
+									"",
+									"ok();",
+									"",
+									"jsonRpcIsValid();",
+									"",
+									"jsonKeyIncludes('error', {",
+									"    code: -32600,",
+									"    message: 'Origin header missing',",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "OPTIONS",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}",
+							"host": [
+								"{{url}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CORS preflight, no ACRM header",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "4bcb4169-2d97-4021-ace6-cc267eb895d5",
+								"exec": [
+									"eval(pm.globals.get(\"factomd-api-proxy-js\"));",
+									"",
+									"ok();",
+									"",
+									"jsonRpcIsValid();",
+									"",
+									"jsonKeyIncludes('error', {",
+									"    code: -32600,",
+									"    message: 'Access-Control-Request-Method header missing',",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "OPTIONS",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://www.foo.com",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}",
+							"host": [
+								"{{url}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CORS preflight, wrong ACRM header",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "4bcb4169-2d97-4021-ace6-cc267eb895d5",
+								"exec": [
+									"eval(pm.globals.get(\"factomd-api-proxy-js\"));",
+									"",
+									"ok();",
+									"",
+									"jsonRpcIsValid();",
+									"",
+									"jsonKeyIncludes('error', {",
+									"    code: -32600,",
+									"    message: 'Requested method POST is not allowed',",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "OPTIONS",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://www.foo.com",
+								"type": "text"
+							},
+							{
+								"key": "Access-Control-Request-Method",
+								"value": "POST",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}",
+							"host": [
+								"{{url}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Good CORS preflight",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "4bcb4169-2d97-4021-ace6-cc267eb895d5",
+								"exec": [
+									"eval(pm.globals.get(\"factomd-api-proxy-js\"));",
+									"",
+									"ok();",
+									"",
+									"jsonRpcIsValid();",
+									"",
+									"jsonKeyIncludes('result', {",
+									"    message: 'Origin is allowed',",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "OPTIONS",
+						"header": [
+							{
+								"key": "Origin",
+								"value": "http://www.foo.com",
+								"type": "text"
+							},
+							{
+								"key": "Access-Control-Request-Method",
+								"value": "GET",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}",
+							"host": [
+								"{{url}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Strict Endpoint",
+			"item": [
+				{
+					"name": "GET /v2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "13c219dd-8d0a-4e06-88a7-5aac0db2d4df",
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/v2",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"v2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /v2/",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "13c219dd-8d0a-4e06-88a7-5aac0db2d4df",
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/v2/",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"v2",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "OPTIONS /v2/",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "13c219dd-8d0a-4e06-88a7-5aac0db2d4df",
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "OPTIONS",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/v2/",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"v2",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /v2/extra/path",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "13c219dd-8d0a-4e06-88a7-5aac0db2d4df",
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/v2/extra/path",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"v2",
+								"extra",
+								"path"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "OPTIONS /v2/extra/path",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "13c219dd-8d0a-4e06-88a7-5aac0db2d4df",
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "OPTIONS",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/v2/extra/path",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"v2",
+								"extra",
+								"path"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "CORS Wildcard",
+			"item": [
+				{
+					"name": "Good preflight to /v2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "99fc58f9-d4f5-4c13-ab74-d889a2fab632",
+								"exec": [
+									"pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+									"",
+									"pm.test(",
+									"    \"Access-Control-Allow-Origin is '*'\", ",
+									"    () => pm.response.to.have.header('Access-Control-Allow-Origin', '*')",
+									");",
+									"",
+									"pm.test(",
+									"    \"Access-Control-Allow-Credentials is 'false'\", ",
+									"    () => pm.response.to.have.header('Access-Control-Allow-Credentials', 'false')",
+									");",
+									"",
+									"pm.test(",
+									"    \"Access-Control-Allow-Methods is 'POST'\", ",
+									"    () => pm.response.to.have.header('Access-Control-Allow-Methods', 'POST')",
+									");",
+									"",
+									"pm.test(",
+									"    \"Access-Control-Allow-Headers is 'test-header'\", ",
+									"    () => pm.response.to.have.header('Access-Control-Allow-Headers', 'test-header')",
+									");",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "OPTIONS",
+						"header": [
+							{
+								"key": "Access-Control-Request-Method",
+								"value": "POST",
+								"type": "text"
+							},
+							{
+								"key": "Access-Control-Request-Headers",
+								"value": "test-header",
+								"type": "text"
+							},
+							{
+								"key": "Origin",
+								"value": "http://www.foo.com",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/v2",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"v2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Preflight with bad request method to /v2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "99fc58f9-d4f5-4c13-ab74-d889a2fab632",
+								"exec": [
+									"pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+									"",
+									"pm.test(",
+									"    \"Access-Control-Allow-Origin is missing\", ",
+									"    () => pm.response.to.not.have.header('Access-Control-Allow-Origin')",
+									");",
+									"",
+									"pm.test(",
+									"    \"Access-Control-Allow-Credentials is missing\", ",
+									"    () => pm.response.to.not.have.header('Access-Control-Allow-Credentials')",
+									");",
+									"",
+									"pm.test(",
+									"    \"Access-Control-Allow-Methods is missing\", ",
+									"    () => pm.response.to.not.have.header('Access-Control-Allow-Methods')",
+									");",
+									"",
+									"pm.test(",
+									"    \"Access-Control-Allow-Headers is missing\", ",
+									"    () => pm.response.to.not.have.header('Access-Control-Allow-Headers')",
+									");",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "OPTIONS",
+						"header": [
+							{
+								"key": "Access-Control-Request-Method",
+								"type": "text",
+								"value": "PUT"
+							},
+							{
+								"key": "Access-Control-Request-Headers",
+								"type": "text",
+								"value": "test-header"
+							},
+							{
+								"key": "Origin",
+								"type": "text",
+								"value": "http://www.foo.com"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/v2",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"v2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Good preflight to /",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "99fc58f9-d4f5-4c13-ab74-d889a2fab632",
+								"exec": [
+									"pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+									"",
+									"pm.test(",
+									"    \"Access-Control-Allow-Origin is '*'\", ",
+									"    () => pm.response.to.have.header('Access-Control-Allow-Origin', '*')",
+									");",
+									"",
+									"pm.test(",
+									"    \"Access-Control-Allow-Credentials is 'false'\", ",
+									"    () => pm.response.to.have.header('Access-Control-Allow-Credentials', 'false')",
+									");",
+									"",
+									"pm.test(",
+									"    \"Access-Control-Allow-Methods is 'GET'\", ",
+									"    () => pm.response.to.have.header('Access-Control-Allow-Methods', 'GET')",
+									");",
+									"",
+									"pm.test(",
+									"    \"Access-Control-Allow-Headers is 'test-header'\", ",
+									"    () => pm.response.to.have.header('Access-Control-Allow-Headers', 'test-header')",
+									");",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "OPTIONS",
+						"header": [
+							{
+								"key": "Access-Control-Request-Method",
+								"type": "text",
+								"value": "GET"
+							},
+							{
+								"key": "Access-Control-Request-Headers",
+								"type": "text",
+								"value": "test-header"
+							},
+							{
+								"key": "Origin",
+								"type": "text",
+								"value": "http://www.foo.com"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}",
+							"host": [
+								"{{url}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Preflight with bad request method to /",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "99fc58f9-d4f5-4c13-ab74-d889a2fab632",
+								"exec": [
+									"pm.test(\"Status code is 200\", () => pm.response.to.have.status(200));",
+									"",
+									"pm.test(",
+									"    \"Access-Control-Allow-Origin is missing\", ",
+									"    () => pm.response.to.not.have.header('Access-Control-Allow-Origin')",
+									");",
+									"",
+									"pm.test(",
+									"    \"Access-Control-Allow-Credentials is missing\", ",
+									"    () => pm.response.to.not.have.header('Access-Control-Allow-Credentials')",
+									");",
+									"",
+									"pm.test(",
+									"    \"Access-Control-Allow-Methods is missing\", ",
+									"    () => pm.response.to.not.have.header('Access-Control-Allow-Methods')",
+									");",
+									"",
+									"pm.test(",
+									"    \"Access-Control-Allow-Headers is missing\", ",
+									"    () => pm.response.to.not.have.header('Access-Control-Allow-Headers')",
+									");",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "OPTIONS",
+						"header": [
+							{
+								"key": "Access-Control-Request-Method",
+								"type": "text",
+								"value": "PUT"
+							},
+							{
+								"key": "Access-Control-Request-Headers",
+								"type": "text",
+								"value": "test-header"
+							},
+							{
+								"key": "Origin",
+								"type": "text",
+								"value": "http://www.foo.com"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}",
+							"host": [
+								"{{url}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Debugging",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": ""
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "576cab3b-690c-4827-9bd5-41d52689aa7c",
+				"type": "text/javascript",
+				"exec": [
+					"console.log('running loading harness');",
+					"",
+					"if (true) { //pm.globals.has(\"testLibJs\") && pm.globals.get(\"testLibJs\")) {",
+					"  console.log('testLibJs found in globals');",
+					"  eval(pm.globals.get(\"factomd-api-proxy-js\"));",
+					"} else {",
+					"  var url = \"https://raw.githubusercontent.com/BedrockSolutions/factomd-api-proxy/0.4.0-rc2-changes/test/shared.js\";",
+					"  console.log(\"testing lib not found. loading from \" + url);",
+					"  pm.sendRequest(url, (err, res) => {",
+					"    eval(res.text());",
+					"    pm.globals.set('factomd-api-proxy-js', res.text());",
+					"  });",
+					"}",
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "eaa27dc2-936f-47b2-957f-bcd5407a100e",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "d2ce0e66-f464-46cd-b94e-4f51366f6c8e",
+			"key": "url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"id": "c408a130-cb68-485b-9852-5e05b1427f9a",
+			"key": "testLibUrl",
+			"value": "https://raw.githubusercontent.com/BedrockSolutions/factomd-api-proxy/0.4.0-rc2-changes/test/shared.js",
+			"type": "string",
+			"disabled": true
+		}
+	]
+}

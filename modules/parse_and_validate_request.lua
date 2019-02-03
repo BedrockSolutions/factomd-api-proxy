@@ -18,7 +18,7 @@ local function determine_request_type(request, response)
     local data = { method = method, uri = uri }
 
     local message = 'Unsupported method & uri combination'
-    set_response_error{response=response, code=-32600, data=data, message=message, status=ngx.HTTP_NOT_FOUND}
+    set_response_error{response=response, data=data, message=message, status=ngx.HTTP_NOT_FOUND}
     error()
   end
 end
@@ -27,7 +27,7 @@ local function validate_request_body(request, response)
   ngx.req.read_body()
   local body = ngx.req.get_body_data()
 
-  local code = -32600
+  local code
   local data = {
     requestBody = body,
   }

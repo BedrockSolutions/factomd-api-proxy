@@ -20,12 +20,14 @@ local function is_response_error(response)
 end
 
 local function set_response_error(arg)
-  arg.response.status = arg.status or ngx.HTTP_BAD_REQUEST
-  arg.response.json_rpc.error = {
-    code = arg.code,
-    data = arg.data,
-    message = arg.message
-  }
+  if not is_response_error(arg.response) then
+    arg.response.status = arg.status or ngx.HTTP_BAD_REQUEST
+    arg.response.json_rpc.error = {
+      code = arg.code or -32600,
+      data = arg.data,
+      message = arg.message
+    }
+  end
 end
 
 local function set_response_message(arg)
