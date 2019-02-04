@@ -1,0 +1,4 @@
+return {
+  CORS_ERROR = -32060,
+  HEALTH_CHECK_ERROR = -32061,
+}

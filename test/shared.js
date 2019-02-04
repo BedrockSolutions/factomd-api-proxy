@@ -31,10 +31,22 @@ serviceUnavailable = () => statusIs(503);
  * Header validation
  */
 
-hasHeader = (header, value) =>
+headerEquals = (header, value) =>
   pm.test(
-    value ? `HTTP header "${header}" has value "${value}"` : `HTTP header "${header}" exists`,
+    `HTTP header "${header}" equals value "${value}"`,
     () => pm.response.to.have.header(header, value)
+  );
+
+headerExists = header =>
+  pm.test(
+    `HTTP header "${header}" exists`,
+    () => pm.response.to.have.header(header)
+  );
+
+headerDoesNotExist = header =>
+  pm.test(
+    `HTTP header "${header}" does not exist`,
+    () => pm.response.to.not.have.header(header)
   );
 
 
@@ -76,19 +88,26 @@ jsonKeyDeepEquals = (key, value) =>
 
 jsonKeyIncludes = (key, value) =>
   pm.test(
-    `JSON key "${key}" includes "${value}"`,
+    `JSON key "${key}" includes '${JSON.stringify(value)}'`,
     () => pm.expect(jsonValue(key)).to.deep.include(value)
   );
 
 jsonKeyConformsTo = ({key, schema, schemaName}) => {
-  ajv = new Ajv({logger: console});
-  const value = jsonValue(key);
-  const isValid = ajv.validate(schema, value);
+  if (key) {
+    ajv = new Ajv({logger: console});
+    const value = jsonValue(key);
+    const isValid = ajv.validate(schema, value);
 
-  pm.test(
-    `JSON key "${key}" conforms to "${schemaName}" schema`,
-    () => pm.expect(isValid).to.be.true
-  );
+    pm.test(
+      `JSON key "${key}" conforms to "${schemaName}" schema`,
+      () => pm.expect(isValid).to.be.true
+    );
+  } else {
+    pm.test(
+      `JSON comforms to "${schemaName}" schema`,
+      () => pm.response.to.have.jsonSchema(schema)
+    );
+  }
 };
 
 
@@ -142,8 +161,42 @@ const jsonRpcSchema = {
   ],
 };
 
+const jsonRpcHasErrorSchema = {
+  type: 'object',
+  properties: {
+    error: {
+      type: 'object',
+    },
+    result: {
+      const: null,
+    },
+  },
+  required: ['error'],
+};
+
+const jsonRpcHasResultSchema = {
+  type: 'object',
+  properties: {
+    error: {
+      const: null,
+    },
+    result: {
+      type: 'object',
+    },
+  },
+  required: ['result'],
+};
+
 jsonRpcIsValid = () =>
   pm.test(`Response is valid JSON RPC`, () => pm.response.to.have.jsonSchema(jsonRpcSchema));
+
+jsonRpcHasError = code => {
+  pm.test(`Response JSON has error and no result`, () => pm.response.to.have.jsonSchema(jsonRpcHasErrorSchema));
+  jsonKeyIncludes('error', {code});
+};
+
+jsonRpcHasResult = () =>
+  pm.test(`Response JSON has result and no error`, () => pm.response.to.have.jsonSchema(jsonRpcHasResultSchema));
 
 
 /*
@@ -152,136 +205,175 @@ jsonRpcIsValid = () =>
 
 const healthCheckSchema = {
   type: 'object',
-  additionalProperties: false,
   properties: {
-    data: {
+    result: {
       type: 'object',
       additionalProperties: false,
       properties: {
-        clocks: {
+        data: {
           type: 'object',
           additionalProperties: false,
           properties: {
-            spread: {
-              type: 'number',
-              minimum: 0,
-            },
-            spreadTolerance: {
-              type: 'number',
-              minimum: 1,
-              maximum: 60,
-            },
-            factomd: {
-              type: 'number',
-            },
-            proxy: {
-              type: 'number',
-            },
-          },
-        },
-        currentBlock: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            age: {
-              type: 'number',
-              minimum: 0,
-              maximum: 1200,
-            },
-            maxAge: {
-              type: 'number',
-              minimum: 600,
-              maximum: 1800,
-            },
-            startTime: {
-              type: 'number',
-            },
-          },
-        },
-        currentMinute: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            minute: {
-              type: 'number',
-              minimum: 0,
-              maximum: 9,
-            },
-            startTime: {
-              type: 'number',
-            },
-            age: {
-              type: 'number',
-              minimum: 0,
-              maximum: 120,
-            },
-          },
-        },
-        flags: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            isClockSpreadOk: {
+            isHealthy: {
               type: 'boolean',
             },
-            isFollowingMinutes: {
-              type: 'boolean',
+            clocks: {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                spread: {
+                  type: 'number',
+                  minimum: 0,
+                },
+                spreadTolerance: {
+                  type: 'number',
+                  minimum: 1,
+                  maximum: 60,
+                },
+                factomd: {
+                  type: 'number',
+                },
+                proxy: {
+                  type: 'number',
+                },
+              },
             },
-            isCurrentBlockAgeValid: {
-              type: 'boolean',
+            currentBlock: {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                age: {
+                  type: 'number',
+                  minimum: 0,
+                  maximum: 1200,
+                },
+                maxAge: {
+                  type: 'number',
+                  minimum: 600,
+                  maximum: 1800,
+                },
+                startTime: {
+                  type: 'number',
+                },
+              },
             },
-            isSynced: {
-              type: 'boolean',
+            currentMinute: {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                minute: {
+                  type: 'number',
+                  minimum: 0,
+                  maximum: 9,
+                },
+                startTime: {
+                  type: 'number',
+                },
+                age: {
+                  type: 'number',
+                  minimum: 0,
+                  maximum: 120,
+                },
+              },
+            },
+            flags: {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                isClockSpreadOk: {
+                  type: 'boolean',
+                },
+                isFollowingMinutes: {
+                  type: 'boolean',
+                },
+                isCurrentBlockAgeValid: {
+                  type: 'boolean',
+                },
+                isSynced: {
+                  type: 'boolean',
+                },
+              },
+            },
+            heights: {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                leader: {
+                  type: 'number',
+                },
+                entry: {
+                  type: 'number',
+                },
+                entryBlock: {
+                  type: 'number',
+                },
+                directoryBlock: {
+                  type: 'number',
+                },
+              },
             },
           },
+          required: [
+            'clocks',
+            'currentBlock',
+            'currentMinute',
+            'flags',
+            'heights',
+            'isHealthy',
+          ],
         },
-        heights: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            leader: {
-              type: 'number',
-            },
-            entry: {
-              type: 'number',
-            },
-            entryBlock: {
-              type: 'number',
-            },
-            directoryBlock: {
-              type: 'number',
-            },
-          },
-        },
+        message: {
+          type: 'string',
+        }
       },
       required: [
-        'clocks',
-        'currentBlock',
-        'currentMinute',
-        'flags',
-        'heights',
+        'data',
+        'message',
       ],
-    },
-    isHealthy: {
-      type: 'boolean',
-    },
-    message: {
-      type: 'string',
     }
   },
-  required: [
-    'data',
-    'isHealthy',
-    'message',
+};
+
+const healthCheckBadFlagsSchema = {
+  type: 'object',
+  anyOf: [
+    {
+      properties: {
+        isClockSpreadOk: {
+          const: false,
+        }
+      },
+    },
+    {
+      properties: {
+        isFollowingMinutes: {
+          const: false,
+        }
+      },
+    },
+    {
+      properties: {
+        isCurrentBlockAgeValid: {
+          const: false,
+        }
+      },
+    },
+    {
+      properties: {
+        isSynced: {
+          const: false,
+        }
+      },
+    },
   ],
 };
 
-healthCheckConforms = () => jsonKeyConformsTo({key: 'result', schema: healthCheckSchema, schemaName: 'health check'});
+healthCheckConforms = () => jsonKeyConformsTo({schema: healthCheckSchema, schemaName: 'health check'});
 
 healthCheckIsGood = () => {
   healthCheckConforms();
 
-  jsonKeyIncludes('result', {
+  jsonKeyIncludes('result.data', {
     isHealthy: true,
   });
 
@@ -292,5 +384,36 @@ healthCheckIsGood = () => {
     isSynced: true,
   });
 };
+
+healthCheckIsBad = () => {
+  healthCheckConforms();
+
+  jsonKeyIncludes('error.data', {
+    isHealthy: false,
+  });
+
+  jsonKeyConformsTo({key: 'error.data.flags', schema: healthCheckBadFlagsSchema, schemaName: 'one or more bad flags'});
+};
+
+
+/*
+ * CORS validation
+ */
+
+corsPreflightAllowed = ({method}) => {
+  const isWildcard = pm.variables.get('isWildcard') === 'true';
+  headerEquals('Access-Control-Allow-Credentials', isWildcard ? 'false' : 'true');
+  headerEquals('Access-Control-Allow-Headers', pm.variables.get('accessControlRequestHeaders'));
+  headerEquals('Access-Control-Allow-Methods', method);
+  headerEquals('Access-Control-Allow-Origin', isWildcard ? '*' : pm.variables.get('origin'));
+};
+
+corsPreflightDenied = () => {
+  headerDoesNotExist('Access-Control-Allow-Credentials');
+  headerDoesNotExist('Access-Control-Allow-Headers');
+  headerDoesNotExist('Access-Control-Allow-Methods');
+  headerDoesNotExist('Access-Control-Allow-Origin');
+};
+
 
 console.log('finished load of testing lib');

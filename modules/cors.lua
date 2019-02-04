@@ -1,3 +1,4 @@
+local codes = require('json_rpc_codes')
 local shared = require('shared')
 local get_header = shared.get_header
 local set_response_error = shared.set_response_error
@@ -36,24 +37,18 @@ end
 
 local function handle_options(arg)
   local allow_origin = arg.allow_origin
-  local request = arg.request
   local response = arg.response
 
   if is_cors_disabled(allow_origin) then
-    set_response_error{response=response, message='CORS disabled', status=ngx.HTTP_OK}
+    set_response_error{response=response, code=codes.CORS_ERROR, message='CORS disabled', status=ngx.HTTP_NOT_FOUND}
     return
   end
 
   local origin = get_header('Origin')
 
+  -- Check that the Origin header is present
   if not origin then
-    set_response_error{response=response, message='Origin header missing', status=ngx.HTTP_OK}
-    return
-  end
-
-  if not is_origin_allowed(allow_origin, origin) then
-    local data = { origin = origin }
-    set_response_error{response=response, data=data, message='Origin is not allowed', status=ngx.HTTP_OK}
+    set_response_error{response=response, code=codes.CORS_ERROR, message='Origin header missing', status=ngx.HTTP_NOT_FOUND}
     return
   end
 
@@ -62,7 +57,7 @@ local function handle_options(arg)
 
   if not req_method or req_method == '' then
     local data = { origin = origin }
-    set_response_error{response=response, data=data, message='Access-Control-Request-Method header missing', status=ngx.HTTP_OK }
+    set_response_error{response=response, code=codes.CORS_ERROR, data=data, message='Access-Control-Request-Method header missing', status=ngx.HTTP_NOT_FOUND }
     return
   end
 
@@ -79,7 +74,13 @@ local function handle_options(arg)
   else
     local data = { requestMethod = req_method, origin = origin }
     local message = string.format('Requested method %s is not allowed', req_method)
-    set_response_error{response=response, data=data, message=message, status=ngx.HTTP_OK}
+    set_response_error{response=response, code=codes.CORS_ERROR, data=data, message=message, status=ngx.HTTP_OK}
+    return
+  end
+
+  if not is_origin_allowed(allow_origin, origin) then
+    local data = { origin = origin }
+    set_response_error{response=response, data=data, message='Origin is not allowed', status=ngx.HTTP_OK}
     return
   end
 
@@ -113,7 +114,7 @@ local function go(config, request, response)
   local allow_origin = config.allow_origin
 
   if request.is_cors_preflight then
-    handle_options{allow_origin=allow_origin, request=request, response=response}
+    handle_options{allow_origin=allow_origin, response=response}
 
   elseif request.is_health_check or request.is_api_call then
     handle_get_and_post{allow_origin=allow_origin, response=response}
