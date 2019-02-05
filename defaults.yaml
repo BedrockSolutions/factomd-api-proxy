@@ -1,35 +1,48 @@
 ---
-
-clientBodyBufferSize: 256k
+accessControlWhitelist:
+  - 0.0.0.0/0
 
 corsAllowOrigin: null
 
 factomdUrl: http://localhost:8088
 
 healthCheck:
+
   clockSpreadToleranceInSeconds: 10
 
   maxBlockAgeInSeconds: 1200
 
 listenPort: null
 
-#http://nginx.org/en/docs/http/ngx_http_core_module.html#keepalive_requests
-keepAliveRequests: 10000
+nginx:
 
-#http://nginx.org/en/docs/http/ngx_http_core_module.html#keepalive_timeout
-# See https://blog.percy.io/tuning-nginx-behind-google-cloud-platform-http-s-load-balancer-305982ddb340
-keepAliveTimeout: 650s
+  # http://nginx.org/en/docs/http/ngx_http_core_module.html#client_body_buffer_size
+  # http://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size
+  clientBodyBufferSize: 256k
+
+  # http://nginx.org/en/docs/http/ngx_http_core_module.html#keepalive_requests
+  keepAliveRequests: 10000
+
+  # http://nginx.org/en/docs/http/ngx_http_core_module.html#keepalive_timeout
+  # https://blog.percy.io/tuning-nginx-behind-google-cloud-platform-http-s-load-balancer-305982ddb340
+  keepAliveTimeout: 650s
 
 ssl:
+
   # http://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_buffer_size
   bufferSize: 4k
 
-  # Certificate chain in PEM format
+  # Certificate or certificate chain in PEM format
   certificate: null
+
+  # Certificate private key in PEM format
+  certificateKey: null
 
   # http://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_ciphers
   ciphers: ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384
 
+  # Diffie-Hellman parameters in PEM format
+  # http://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_dhparam
   dhParam: |
     -----BEGIN DH PARAMETERS-----
     MIICCAKCAgEA2lvzEFlznxCAutMHEVt3fgtpVOYRo/Ni6ElSDOC71Rvsh0wmNhlq
@@ -44,9 +57,6 @@ ssl:
     843g1uYDxtziJYRhesyXvQnaDUzyFWLGYiUObf65+XdLua0d33qkw+CxSgPDFe8J
     bLVKdMtyyt1eS4UKbu+c4sWyCTQ/+clM7PnViRXUvyVyalG5ySHIuaMCAQI=
     -----END DH PARAMETERS-----
-
-  # Private key in PEM format
-  certificateKey: null
 
   # http://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_protocols
   protocols: TLSv1.2

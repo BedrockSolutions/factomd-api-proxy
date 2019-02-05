@@ -4,7 +4,7 @@ A lightweight proxy, custom-built to enhance the factomd API port.
 
 ## Features:
 
-* **CORS support:** Includes wildcard support and Lua pattern syntax for specifying 
+* **CORS support:** Includes wildcard support and PERL regular expression syntax for specifying 
 allowed origins.
 
 * **SSL support:** High-grade SSL configuration that can deliver an A+ SSL Labs rating,
@@ -14,6 +14,9 @@ given a strong cert/key pair.
 instance and returns a detailed diagnostic payload. This allows the API to work correctly 
 with cloud provider load balancers, and streamlines the development of monitoring
 infrastructure.
+
+* **Access Control Whitelist:** An optional whitelist of IP addresses and/or networks can be
+provided to restrict client connections.
 
 * **Detailed logging:** API method names are logged, along with the usual information.
 
@@ -43,6 +46,15 @@ traversed, and all files found will be merged to create the final configuration.
 
 ### Primary options
 
+* **`accessControlWhitelist`:** An array of allowed IP addresses and IP networks in CIDR format. If
+omitted, all addresses are allowed to connect. Example:
+
+```yaml
+accessControlWhitelist:
+- 192.168.0.0/16
+- 1.2.3.4
+```
+
 * **`corsAllowOrigin`:** Configures CORS. Three modes of operation are supported:
 
   * `""`: Disables CORS. This is the default
@@ -50,17 +62,20 @@ traversed, and all files found will be merged to create the final configuration.
   * `"*"`: Enables CORS in wildcard mode. This will allow all browsers to use
   the API.
   
-  * `"<lua pattern> [<lua pattern>, ...]"`: Enables CORS only for origins that match one
-  of the patterns in a space-delimited list. Some examples:
+  * `"<PERL Regular Expression>"`: Enables CORS only for origins that match the regular expression.
+  Some examples:
   
-    * `^http://www%.foo%.com$`: Exact match of one domain
+    * `^http://www\\.foo\\.com$`: Exact match of one domain.
     
-    * `^https?://.*foo%.com$`: Matches all origins ending in `foo.com`. Both http
+    * `^https?://.*foo\\.com$`: Matches all origins ending in `foo.com`. Both http
     and https URLs match.
     
-    * `^http://foo%.com$ ^http://bar%.com$`: Exact match for either `http://foo.com`
+    * `^http://(foo|bar)\\.com$`: Exact match for either `http://foo.com`
     or `http://bar.com`.
-    
+  
+  > Note: Special characters, such as the period, need to be escaped with a backslash. To insert
+  a literal backslash, escape it with a second backslash.
+  
 * **`factomdUrl`:** The URL of the upstream factomd instance. Defaults to `http://localhost:8088`.
 
 * **`listenPort`:** The port the proxy will listen on. Defaults to `8080` for non-SSL operation,
@@ -74,12 +89,25 @@ SSL will be enabled.
  
 ### Secondary options
 
+* **`nginx.clientBodyBufferSize`:** Specifies the size and the max size of the client
+request buffer. The default should be plenty generous for the vast majority of API
+operations.
+
+* **`nginx.keepAliveRequests`:** Sets the maximum number of requests that can be served 
+through one keep-alive connection. After the maximum number of requests are made, the 
+connection is closed. The default value is tuned so that the proxy will work correctly
+behind cloud load balancers.
+
+* **`nginx.keepAliveTimeout`:** Sets a timeout during which a keep-alive client 
+connection will stay open on the server side. The default value is tuned so that 
+the proxy will work correctly behind cloud load balancers.
+
 * **`ssl.ciphers`:** Specifies the enabled SSL ciphers. The ciphers are specified in the 
 format understood by the OpenSSL library. The full list can be viewed by issuing the 
 `openssl ciphers` command. The default is a very selective cipher suite that gives maximum
 security.
 
-* **`ssl.dhParam`:** Specifies the Diffie-Hellman key exchange parameters. 
+* **`ssl.dhParam`:** Specifies the Diffie-Hellman key exchange parameters in PEM format.
 
 ## Examples
 
@@ -122,7 +150,7 @@ docker run -d \
 
 `general.yaml`
 ```yaml
-corsAllowOrigin: '^https://www%.foo%.com$'
+corsAllowOrigin: '^https://www\\.foo\\.com$'
 
 factomdUrl: http://courtesy-node.factom.com
 ```
@@ -144,9 +172,6 @@ ssl:
     -----END PRIVATE KEY-----
 ```
 
-> Note: Since the `.` character has special meaning in Lua patterns, it needs to be
-escaped with the `%` escape character.
-
 #### Docker run command
 
 ```bash
@@ -160,4 +185,3 @@ docker run -d \
       
   * [Base Image](https://hub.docker.com/r/openresty/openresty/)
   
-  * [Lua Patterns](https://www.lua.org/pil/20.2.html)

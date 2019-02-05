@@ -1,6 +1,7 @@
 local cjson = require('cjson')
+local set_response_error = require('shared').set_response_error
 
-local function determine_request_type(request)
+local function determine_request_type(request, response)
   local method = ngx.req.get_method()
   local uri = ngx.var.uri
 
@@ -14,69 +15,73 @@ local function determine_request_type(request)
     request.is_api_call = true
 
   else
-    request.error = string.format('%s %s is an unsupported method & uri combination', method, uri)
-    error(request)
+    local data = { method = method, uri = uri }
+
+    local message = 'Unsupported method & uri combination'
+    set_response_error{response=response, data=data, message=message, status=ngx.HTTP_NOT_FOUND}
+    error()
   end
 end
 
-local function validate_request_body(request)
+local function validate_request_body(request, response)
   ngx.req.read_body()
   local body = ngx.req.get_body_data()
+
+  local code
+  local data = {
+    requestBody = body,
+  }
+  local message
 
   if request.is_api_call then
     local is_json_valid, rpc_call_or_error = pcall(cjson.decode, body)
 
     if not is_json_valid then
-      request.error = string.format('Unable to parse request body JSON: %s', rpc_call_or_error)
-
-    elseif type(rpc_call_or_error) ~= 'table' then
-      request.error = string.format('Expected body to contain a JSON RPC request object. Got %s instead', tostring(rpc_call_or_error))
-
-    elseif rpc_call_or_error.jsonrpc ~= '2.0' then
-      request.error = string.format('Expected the jsonrpc field to be the string 2.0. Got %s instead', tostring(rpc_call_or_error.jsonrpc))
-
-    elseif rpc_call_or_error.id == nil or rpc_call_or_error.id == '' then
-      request.error = 'Expected the id field to not be empty'
-
-    elseif type(rpc_call_or_error.id) ~= 'string' and type(rpc_call_or_error.id) ~= 'number' then
-      request.error = string.format('Expected the id field to be a string or number. Got %s instead', tostring(rpc_call_or_error.id))
-
-    elseif rpc_call_or_error.method == nil or rpc_call_or_error.method == '' then
-      request.error = 'Expected the method field to not be empty'
-
-    elseif type(rpc_call_or_error.method) ~= 'string' then
-      request.error = string.format('Expected the method field to be a string. Got %s instead', tostring(rpc_call_or_error.method))
+      code = -32700
+      data.parseError = rpc_call_or_error
+      message = 'Unable to parse request body JSON'
 
     else
-      request.body = body
-      request.json_rpc_call = rpc_call_or_error
+      data.parsedRequest = rpc_call_or_error
+
+      if type(rpc_call_or_error) ~= 'table' then
+        message = 'Request body is not a JSON object'
+
+      elseif rpc_call_or_error.jsonrpc ~= '2.0' then
+        message = 'jsonrpc field is not 2.0'
+
+      elseif rpc_call_or_error.id == nil or rpc_call_or_error.id == '' then
+        message = 'id field is empty'
+
+      elseif type(rpc_call_or_error.id) ~= 'string' and type(rpc_call_or_error.id) ~= 'number' then
+        message = 'id field is not a string or number'
+
+      elseif rpc_call_or_error.method == nil or rpc_call_or_error.method == '' then
+        message = 'method field is empty'
+
+      elseif type(rpc_call_or_error.method) ~= 'string' then
+        message = 'method field is not a string'
+
+      else
+        request.body = body
+        request.json_rpc = rpc_call_or_error
+        response.json_rpc.id = request.json_rpc.id
+      end
     end
-  elseif request.body then
-    request.error = 'No request body is allowed when making health check or preflight requests'
+
+  elseif body then
+    data = { requestBody = body }
+    message = 'No request body is allowed when making health check or preflight requests'
   end
 
-  if request.error then
-    error(request)
+  if message then
+    set_response_error{response=response, code=code, data=data, message=message}
+    error()
   end
 end
 
-local function go(config)
-  local request = {
-    is_health_check = false,
-    is_cors_preflight = false,
-    is_api_call = false,
-    error = nil,
-    api_method = nil,
-    body = nil,
-  }
+return function(request, response)
+  determine_request_type(request, response)
 
-  determine_request_type(request)
-
-  validate_request_body(request)
-
-  return request
+  validate_request_body(request, response)
 end
-
-return {
-  go = go,
-}

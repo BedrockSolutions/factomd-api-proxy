@@ -1,0 +1,945 @@
+{
+	"info": {
+		"_postman_id": "20e670c5-cb6a-4bb7-ab7c-3a1c6ceb398d",
+		"name": "factomd-api-proxy",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Good health check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c40dfe0f-ef6f-4da6-9d28-9eac0e1e637a",
+								"exec": [
+									"eval(pm.globals.get(\"factomd-api-proxy-js\"));",
+									"",
+									"ok();",
+									"",
+									"jsonRpcIsValid();",
+									"",
+									"jsonRpcHasResult();",
+									"",
+									"healthCheckIsGood();",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}",
+							"host": [
+								"{{url}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Bad health check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c40dfe0f-ef6f-4da6-9d28-9eac0e1e637a",
+								"exec": [
+									"eval(pm.globals.get(\"factomd-api-proxy-js\"));",
+									"",
+									"serviceUnavailable();",
+									"",
+									"jsonRpcIsValid();",
+									"",
+									"jsonRpcHasError(-32061);",
+									"",
+									"healthCheckIsBad();",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}",
+							"host": [
+								"{{url}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Wrong HTTP verb",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b7f35443-9e8b-4934-a3f6-dc9d9b1184f5",
+								"exec": [
+									"eval(pm.globals.get(\"factomd-api-proxy-js\"));",
+									"",
+									"notFound();",
+									"",
+									"jsonRpcIsValid();",
+									"",
+									"jsonRpcHasError(-32600);",
+									"",
+									"jsonKeyIncludes('error', {",
+									"    code: -32600,",
+									"    data: {",
+									"        method: 'POST',",
+									"        uri: '/',",
+									"    },",
+									"    message: 'Unsupported method & uri combination',",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}",
+							"host": [
+								"{{url}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Request body present",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "b7f35443-9e8b-4934-a3f6-dc9d9b1184f5",
+								"exec": [
+									"eval(pm.globals.get(\"factomd-api-proxy-js\"));",
+									"",
+									"badRequest();",
+									"",
+									"jsonRpcIsValid();",
+									"",
+									"jsonRpcHasError(-32600);",
+									"",
+									"jsonKeyIncludes('error', {",
+									"    code: -32600,",
+									"    data: {",
+									"        requestBody: 'Hello World',",
+									"    },",
+									"    message: 'No request body is allowed when making health check or preflight requests',",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "Hello World"
+						},
+						"url": {
+							"raw": "{{url}}",
+							"host": [
+								"{{url}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "API Call",
+			"item": []
+		},
+		{
+			"name": "CORS Preflight",
+			"item": [
+				{
+					"name": "CORS Disabled",
+					"item": [
+						{
+							"name": "Good CORS preflight",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"id": "4bcb4169-2d97-4021-ace6-cc267eb895d5",
+										"exec": [
+											"eval(pm.globals.get(\"factomd-api-proxy-js\"));",
+											"",
+											"notFound();",
+											"",
+											"corsPreflightDenied();",
+											"",
+											"jsonRpcHasError(-32060);",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"method": "OPTIONS",
+								"header": [
+									{
+										"key": "Origin",
+										"type": "text",
+										"value": "{{origin}}"
+									},
+									{
+										"key": "Access-Control-Request-Method",
+										"type": "text",
+										"value": "GET"
+									},
+									{
+										"key": "Access-Control-Request-Headers",
+										"type": "text",
+										"value": "{{accessControlRequestHeaders}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": ""
+								},
+								"url": {
+									"raw": "{{url}}",
+									"host": [
+										"{{url}}"
+									]
+								}
+							},
+							"response": []
+						}
+					],
+					"_postman_isSubFolder": true
+				},
+				{
+					"name": "CORS Enabled",
+					"item": [
+						{
+							"name": "Health Check",
+							"item": [
+								{
+									"name": "CORS preflight, no Origin header",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "4bcb4169-2d97-4021-ace6-cc267eb895d5",
+												"exec": [
+													"eval(pm.globals.get(\"factomd-api-proxy-js\"));",
+													"",
+													"notFound();",
+													"",
+													"corsPreflightDenied()",
+													"",
+													"jsonRpcHasError(-32060);",
+													""
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "OPTIONS",
+										"header": [
+											{
+												"key": "Access-Control-Request-Headers",
+												"value": "{{accessControlRequestHeaders}}",
+												"type": "text"
+											},
+											{
+												"key": "Access-Control-Request-Method",
+												"value": "GET",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
+										"url": {
+											"raw": "{{url}}",
+											"host": [
+												"{{url}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "CORS preflight, no ACRM header",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "4bcb4169-2d97-4021-ace6-cc267eb895d5",
+												"exec": [
+													"eval(pm.globals.get(\"factomd-api-proxy-js\"));",
+													"",
+													"notFound();",
+													"",
+													"corsPreflightDenied()",
+													"",
+													"jsonRpcHasError(-32060);",
+													""
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "OPTIONS",
+										"header": [
+											{
+												"key": "Origin",
+												"value": "{{origin}}",
+												"type": "text"
+											},
+											{
+												"key": "Access-Control-Request-Headers",
+												"value": "{{accessControlRequestHeaders}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
+										"url": {
+											"raw": "{{url}}",
+											"host": [
+												"{{url}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "CORS preflight, wrong ACRM header",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "4bcb4169-2d97-4021-ace6-cc267eb895d5",
+												"exec": [
+													"eval(pm.globals.get(\"factomd-api-proxy-js\"));",
+													"",
+													"ok();",
+													"",
+													"corsPreflightDenied();",
+													"",
+													"jsonRpcHasError(-32060);",
+													""
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "OPTIONS",
+										"header": [
+											{
+												"key": "Origin",
+												"value": "{{origin}}",
+												"type": "text"
+											},
+											{
+												"key": "Access-Control-Request-Method",
+												"value": "POST",
+												"type": "text"
+											},
+											{
+												"key": "Access-Control-Request-Headers",
+												"value": "{{accessControlRequestHeaders}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
+										"url": {
+											"raw": "{{url}}",
+											"host": [
+												"{{url}}"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Good CORS preflight",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "4bcb4169-2d97-4021-ace6-cc267eb895d5",
+												"exec": [
+													"eval(pm.globals.get(\"factomd-api-proxy-js\"));",
+													"",
+													"ok();",
+													"",
+													"corsPreflightAllowed({method: 'GET'});",
+													"",
+													"jsonRpcHasResult();",
+													"",
+													"jsonKeyIncludes('result', {",
+													"    message: 'Origin is allowed',",
+													"});",
+													""
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "OPTIONS",
+										"header": [
+											{
+												"key": "Origin",
+												"value": "{{origin}}",
+												"type": "text"
+											},
+											{
+												"key": "Access-Control-Request-Method",
+												"value": "GET",
+												"type": "text"
+											},
+											{
+												"key": "Access-Control-Request-Headers",
+												"value": "{{accessControlRequestHeaders}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
+										"url": {
+											"raw": "{{url}}",
+											"host": [
+												"{{url}}"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"_postman_isSubFolder": true
+						},
+						{
+							"name": "API Call",
+							"item": [
+								{
+									"name": "CORS preflight, no Origin header",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "4bcb4169-2d97-4021-ace6-cc267eb895d5",
+												"exec": [
+													"eval(pm.globals.get(\"factomd-api-proxy-js\"));",
+													"",
+													"notFound();",
+													"",
+													"corsPreflightDenied();",
+													"",
+													"jsonRpcHasError(-32060);",
+													""
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "OPTIONS",
+										"header": [
+											{
+												"key": "Access-Control-Request-Headers",
+												"value": "{{accessControlRequestHeaders}}",
+												"type": "text"
+											},
+											{
+												"key": "Access-Control-Request-Method",
+												"value": "POST",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
+										"url": {
+											"raw": "{{url}}/v2",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"v2"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "CORS preflight, no ACRM header",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "4bcb4169-2d97-4021-ace6-cc267eb895d5",
+												"exec": [
+													"eval(pm.globals.get(\"factomd-api-proxy-js\"));",
+													"",
+													"notFound();",
+													"",
+													"corsPreflightDenied();",
+													"",
+													"jsonRpcHasError(-32060);",
+													"",
+													""
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "OPTIONS",
+										"header": [
+											{
+												"key": "Origin",
+												"value": "{{origin}}",
+												"type": "text"
+											},
+											{
+												"key": "Access-Control-Request-Headers",
+												"value": "{{accessControlRequestHeaders}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
+										"url": {
+											"raw": "{{url}}/v2",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"v2"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "CORS preflight, wrong ACRM header",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "4bcb4169-2d97-4021-ace6-cc267eb895d5",
+												"exec": [
+													"eval(pm.globals.get(\"factomd-api-proxy-js\"));",
+													"",
+													"ok();",
+													"",
+													"corsPreflightDenied();",
+													"",
+													"jsonRpcHasError(-32060);",
+													""
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "OPTIONS",
+										"header": [
+											{
+												"key": "Origin",
+												"value": "{{origin}}",
+												"type": "text"
+											},
+											{
+												"key": "Access-Control-Request-Method",
+												"value": "GET",
+												"type": "text"
+											},
+											{
+												"key": "Access-Control-Request-Headers",
+												"value": "{{accessControlRequestHeaders}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
+										"url": {
+											"raw": "{{url}}/v2",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"v2"
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Good CORS preflight",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"id": "4bcb4169-2d97-4021-ace6-cc267eb895d5",
+												"exec": [
+													"eval(pm.globals.get(\"factomd-api-proxy-js\"));",
+													"",
+													"ok();",
+													"",
+													"corsPreflightAllowed({method: 'POST'})",
+													"",
+													"jsonRpcHasResult();",
+													"",
+													"jsonKeyIncludes('result', {",
+													"    message: 'Origin is allowed',",
+													"});",
+													""
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"method": "OPTIONS",
+										"header": [
+											{
+												"key": "Origin",
+												"value": "{{origin}}",
+												"type": "text"
+											},
+											{
+												"key": "Access-Control-Request-Method",
+												"value": "POST",
+												"type": "text"
+											},
+											{
+												"key": "Access-Control-Request-Headers",
+												"value": "{{accessControlRequestHeaders}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": ""
+										},
+										"url": {
+											"raw": "{{url}}/v2",
+											"host": [
+												"{{url}}"
+											],
+											"path": [
+												"v2"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"_postman_isSubFolder": true
+						}
+					],
+					"_postman_isSubFolder": true
+				}
+			]
+		},
+		{
+			"name": "Strict Endpoint",
+			"item": [
+				{
+					"name": "GET /v2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "13c219dd-8d0a-4e06-88a7-5aac0db2d4df",
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/v2",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"v2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /v2/",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "13c219dd-8d0a-4e06-88a7-5aac0db2d4df",
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/v2/",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"v2",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "OPTIONS /v2/",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "13c219dd-8d0a-4e06-88a7-5aac0db2d4df",
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "OPTIONS",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/v2/",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"v2",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /v2/extra/path",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "13c219dd-8d0a-4e06-88a7-5aac0db2d4df",
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/v2/extra/path",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"v2",
+								"extra",
+								"path"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "OPTIONS /v2/extra/path",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "13c219dd-8d0a-4e06-88a7-5aac0db2d4df",
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "OPTIONS",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{url}}/v2/extra/path",
+							"host": [
+								"{{url}}"
+							],
+							"path": [
+								"v2",
+								"extra",
+								"path"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "576cab3b-690c-4827-9bd5-41d52689aa7c",
+				"type": "text/javascript",
+				"exec": [
+					"console.log('running loading harness');",
+					"",
+					"if (true) { //pm.globals.has(\"factomd-api-proxy-js\") && pm.globals.get(\"factomd-api-proxy-js\")) {",
+					"  console.log('testLibJs found in globals');",
+					"  eval(pm.globals.get(\"factomd-api-proxy-js\"));",
+					"} else {",
+					"  var url = \"https://raw.githubusercontent.com/BedrockSolutions/factomd-api-proxy/0.4.0-rc2-changes/test/shared.js\";",
+					"  console.log(\"testing lib not found. loading from \" + url);",
+					"  pm.sendRequest(url, (err, res) => {",
+					"    eval(res.text());",
+					"    pm.globals.set('factomd-api-proxy-js', res.text());",
+					"  });",
+					"}",
+					"",
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "eaa27dc2-936f-47b2-957f-bcd5407a100e",
+				"type": "text/javascript",
+				"exec": [
+					"eval(pm.globals.get(\"factomd-api-proxy-js\"));",
+					"",
+					"jsonRpcIsValid();"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "ad37c715-31d1-43d6-886d-5c39fc5f46f0",
+			"key": "url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"id": "8e82b8eb-c2be-455a-ab1f-20325162a6eb",
+			"key": "origin",
+			"value": "http://www.foo.com",
+			"type": "string"
+		},
+		{
+			"id": "478b04e2-973d-4beb-a194-da4fee942a62",
+			"key": "accessControlRequestHeaders",
+			"value": "Requested-Header",
+			"type": "string"
+		},
+		{
+			"id": "0cc26a4e-b914-4477-960b-f7e2c814d1b8",
+			"key": "isWildcard",
+			"value": "false",
+			"type": "string"
+		}
+	]
+}

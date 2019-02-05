@@ -1,5 +1,10 @@
 local cjson = require('cjson')
-local is_status_ok = require('shared').is_status_ok
+
+local codes = require('json_rpc_codes')
+
+local shared = require('shared')
+local is_status_ok = shared.is_status_ok
+local set_response_error = shared.set_response_error
 
 local function factomd_api_call(method)
   local json_rpc = {
@@ -36,6 +41,7 @@ local function create_data_object(arg)
   local current_minute_data = get_response_data(arg.current_minute_res)
 
   local data = {
+    isHealthy = false,
     clocks = {
       factomd = nanoseconds_to_seconds(current_minute_data.currenttime),
       proxy = os.time(),
@@ -73,41 +79,33 @@ local function create_data_object(arg)
     end
   end
 
+  if data.flags.isSynced and data.flags.isClockSpreadOk and data.flags.isCurrentBlockAgeValid and data.flags.isFollowingMinutes then
+    data.isHealthy = true
+  end
+
   return data
 end
 
-local function go(config)
+return function(config, response)
   local heights_res = factomd_api_call('heights')
 
   if not is_status_ok(heights_res.status) then
-    send_response({
-      message = 'Error getting heights',
-      rawResponses = {
-        heights = heights_res,
-      }
-    }, ngx.HTTP_SERVICE_UNAVAILABLE)
-
+    local data = { heightsResponse = heights_res }
+    set_response_error{response=response, code=codes.HEALTH_CHECK_ERROR, data=data, message='Error getting heights', status=ngx.HTTP_SERVICE_UNAVAILABLE}
     return
   end
 
   local current_minute_res = factomd_api_call('current-minute')
 
   if not is_status_ok(current_minute_res.status) then
-    send_response({
-      message = 'Error getting current minute',
-      rawResponses = {
-        heights = heights_res,
-        currentMinute = current_minute_res,
-      }
-    }, ngx.HTTP_SERVICE_UNAVAILABLE)
-
+    local data = { heightsResponse = heights_res, currentMinuteResponse = current_minute_res }
+    set_response_error{response=response, code=codes.HEALTH_CHECK_ERROR, data=data, message='Error getting current minute', status=ngx.HTTP_SERVICE_UNAVAILABLE}
     return
   end
 
   local data = create_data_object{heights_res=heights_res, current_minute_res=current_minute_res, config=config}
 
   local message
-  local factomd_is_healthy = false
 
   -- If the proxy and factomd clocks are too far apart...
   if not data.flags.isClockSpreadOk then
@@ -128,20 +126,20 @@ local function go(config)
   -- If we get here, health check passed...
   else
     message='Health check succeeded'
-    factomd_is_healthy = true
   end
 
-  local status = factomd_is_healthy and ngx.HTTP_OK or ngx.HTTP_SERVICE_UNAVAILABLE
-
-  local response = {
-    isHealthy = factomd_is_healthy,
-    message = message,
-    data = data,
-  }
-
-  send_response(response, status)
+  if data.isHealthy then
+    response.status = ngx.HTTP_OK
+    response.json_rpc.result = {
+      data = data,
+      message = message,
+    }
+  else
+    response.status = ngx.HTTP_SERVICE_UNAVAILABLE
+    response.json_rpc.error = {
+      code = codes.HEALTH_CHECK_ERROR,
+      data = data,
+      message = message,
+    }
+  end
 end
-
-return {
-  go = go,
-}
