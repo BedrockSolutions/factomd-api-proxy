@@ -80,12 +80,8 @@ local function validate_request_body(request, response)
   end
 end
 
-local function go(request, response)
+return function(request, response)
   determine_request_type(request, response)
 
   validate_request_body(request, response)
 end
-
-return {
-  go = go,
-}

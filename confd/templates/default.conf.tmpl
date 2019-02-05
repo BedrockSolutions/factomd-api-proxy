@@ -94,7 +94,7 @@ server {
         ssl_enabled = {{ $sslEnabled }}
       }
 
-      require('main').go(config)
+      require('main')(config)
     }
   }
 

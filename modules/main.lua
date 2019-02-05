@@ -42,14 +42,13 @@ local function init_response_object()
       error = nil,
       result = nil,
     },
-    raw_body = nil,
   }
 end
 
 local function send_response(response)
   ngx.status = response.status or 520 -- Unknown error
 
-  local response_json = response.raw_body or cjson.encode(response.json_rpc)
+  local response_json = cjson.encode(response.json_rpc)
 
   ngx.header['Content-Length'] = string.len(response_json)
 
@@ -61,35 +60,30 @@ local function send_response(response)
   ngx.exit(response.status)
 end
 
-local function go(config)
+return function(config)
   local request = init_request_object()
   local response = init_response_object()
+
+  global_headers(config.ssl_enabled, response)
 
   access_control.check_access(request, response)
 
   if not is_response_error(response) then
-    pcall(parse_and_validate_request.go, request, response)
+    pcall(parse_and_validate_request, request, response)
 
-    global_headers(config.ssl_enabled, response)
-    cors.go(config, request, response)
+    cors(config, request, response)
 
     if not is_response_error(response) then
       if request.is_health_check then
-        health_check.go(config, response)
+        health_check(config, response)
 
       elseif request.is_api_call then
-        api_call.go(request, response)
+        api_call(request, response)
       end
     end
-
---    log.log_request(request)
-  else
---    log.log_entry(string.format('Access DENIED for IP address %s', request.client_ip))
   end
+
+  log(request, response)
 
   send_response(response)
 end
-
-return {
-  go = go,
-}

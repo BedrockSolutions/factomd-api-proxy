@@ -203,125 +203,128 @@ jsonRpcHasResult = () =>
  * Health check validation
  */
 
-const healthCheckSchema = {
+const healthCheckDataSchema = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    isHealthy: {
+      type: 'boolean',
+    },
+    clocks: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        spread: {
+          type: 'number',
+          minimum: 0,
+          maximum: 60,
+        },
+        spreadTolerance: {
+          type: 'number',
+          minimum: 0,
+          maximum: 60,
+        },
+        factomd: {
+          type: 'number',
+        },
+        proxy: {
+          type: 'number',
+        },
+      },
+    },
+    currentBlock: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        age: {
+          type: 'number',
+          minimum: 0,
+          maximum: 1200,
+        },
+        maxAge: {
+          type: 'number',
+          minimum: 600,
+          maximum: 1800,
+        },
+        startTime: {
+          type: 'number',
+        },
+      },
+    },
+    currentMinute: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        minute: {
+          type: 'number',
+          minimum: 0,
+          maximum: 9,
+        },
+        startTime: {
+          type: 'number',
+        },
+        age: {
+          type: 'number',
+          minimum: 0,
+          maximum: 120,
+        },
+      },
+    },
+    flags: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        isClockSpreadOk: {
+          type: 'boolean',
+        },
+        isFollowingMinutes: {
+          type: 'boolean',
+        },
+        isCurrentBlockAgeValid: {
+          type: 'boolean',
+        },
+        isSynced: {
+          type: 'boolean',
+        },
+      },
+    },
+    heights: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        leader: {
+          type: 'number',
+        },
+        entry: {
+          type: 'number',
+        },
+        entryBlock: {
+          type: 'number',
+        },
+        directoryBlock: {
+          type: 'number',
+        },
+      },
+    },
+  },
+  required: [
+    'clocks',
+    'currentBlock',
+    'currentMinute',
+    'flags',
+    'heights',
+    'isHealthy',
+  ],
+};
+
+const healthCheckResultSchema = {
   type: 'object',
   properties: {
     result: {
       type: 'object',
       additionalProperties: false,
       properties: {
-        data: {
-          type: 'object',
-          additionalProperties: false,
-          properties: {
-            isHealthy: {
-              type: 'boolean',
-            },
-            clocks: {
-              type: 'object',
-              additionalProperties: false,
-              properties: {
-                spread: {
-                  type: 'number',
-                  minimum: 0,
-                },
-                spreadTolerance: {
-                  type: 'number',
-                  minimum: 1,
-                  maximum: 60,
-                },
-                factomd: {
-                  type: 'number',
-                },
-                proxy: {
-                  type: 'number',
-                },
-              },
-            },
-            currentBlock: {
-              type: 'object',
-              additionalProperties: false,
-              properties: {
-                age: {
-                  type: 'number',
-                  minimum: 0,
-                  maximum: 1200,
-                },
-                maxAge: {
-                  type: 'number',
-                  minimum: 600,
-                  maximum: 1800,
-                },
-                startTime: {
-                  type: 'number',
-                },
-              },
-            },
-            currentMinute: {
-              type: 'object',
-              additionalProperties: false,
-              properties: {
-                minute: {
-                  type: 'number',
-                  minimum: 0,
-                  maximum: 9,
-                },
-                startTime: {
-                  type: 'number',
-                },
-                age: {
-                  type: 'number',
-                  minimum: 0,
-                  maximum: 120,
-                },
-              },
-            },
-            flags: {
-              type: 'object',
-              additionalProperties: false,
-              properties: {
-                isClockSpreadOk: {
-                  type: 'boolean',
-                },
-                isFollowingMinutes: {
-                  type: 'boolean',
-                },
-                isCurrentBlockAgeValid: {
-                  type: 'boolean',
-                },
-                isSynced: {
-                  type: 'boolean',
-                },
-              },
-            },
-            heights: {
-              type: 'object',
-              additionalProperties: false,
-              properties: {
-                leader: {
-                  type: 'number',
-                },
-                entry: {
-                  type: 'number',
-                },
-                entryBlock: {
-                  type: 'number',
-                },
-                directoryBlock: {
-                  type: 'number',
-                },
-              },
-            },
-          },
-          required: [
-            'clocks',
-            'currentBlock',
-            'currentMinute',
-            'flags',
-            'heights',
-            'isHealthy',
-          ],
-        },
+        data: healthCheckDataSchema,
         message: {
           type: 'string',
         }
@@ -330,9 +333,37 @@ const healthCheckSchema = {
         'data',
         'message',
       ],
-    }
+    },
   },
+  required: ['result']
 };
+
+const healthCheckErrorSchema = {
+  type: 'object',
+  properties: {
+    error: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        code: {
+          type: 'number',
+          minimum: -32768,
+          maximum: -32000,
+        },
+        data: healthCheckDataSchema,
+        message: {
+          type: 'string',
+        }
+      },
+      required: [
+        'data',
+        'message',
+      ],
+    },
+  },
+  required: ['error']
+};
+
 
 const healthCheckBadFlagsSchema = {
   type: 'object',
@@ -368,14 +399,10 @@ const healthCheckBadFlagsSchema = {
   ],
 };
 
-healthCheckConforms = () => jsonKeyConformsTo({schema: healthCheckSchema, schemaName: 'health check'});
-
 healthCheckIsGood = () => {
-  healthCheckConforms();
+  jsonKeyConformsTo({schema: healthCheckResultSchema, schemaName: 'good health check'});
 
-  jsonKeyIncludes('result.data', {
-    isHealthy: true,
-  });
+  jsonKeyEquals('result.data.isHealthy', true);
 
   jsonKeyIncludes('result.data.flags', {
     isClockSpreadOk: true,
@@ -386,11 +413,9 @@ healthCheckIsGood = () => {
 };
 
 healthCheckIsBad = () => {
-  healthCheckConforms();
+  jsonKeyConformsTo({schema: healthCheckErrorSchema, schemaName: 'bad health check'});
 
-  jsonKeyIncludes('error.data', {
-    isHealthy: false,
-  });
+  jsonKeyEquals('error.data.isHealthy', false);
 
   jsonKeyConformsTo({key: 'error.data.flags', schema: healthCheckBadFlagsSchema, schemaName: 'one or more bad flags'});
 };

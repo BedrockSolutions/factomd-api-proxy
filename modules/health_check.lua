@@ -5,7 +5,6 @@ local codes = require('json_rpc_codes')
 local shared = require('shared')
 local is_status_ok = shared.is_status_ok
 local set_response_error = shared.set_response_error
-local set_response_message = shared.set_response_message
 
 local function factomd_api_call(method)
   local json_rpc = {
@@ -87,12 +86,12 @@ local function create_data_object(arg)
   return data
 end
 
-local function go(config, response)
+return function(config, response)
   local heights_res = factomd_api_call('heights')
 
   if not is_status_ok(heights_res.status) then
     local data = { heightsResponse = heights_res }
-    set_response_error{response=response, code=-32603, data=data, message='Error getting heights', status=ngx.HTTP_SERVICE_UNAVAILABLE}
+    set_response_error{response=response, code=codes.HEALTH_CHECK_ERROR, data=data, message='Error getting heights', status=ngx.HTTP_SERVICE_UNAVAILABLE}
     return
   end
 
@@ -100,7 +99,7 @@ local function go(config, response)
 
   if not is_status_ok(current_minute_res.status) then
     local data = { heightsResponse = heights_res, currentMinuteResponse = current_minute_res }
-    set_response_error{response=response, code=-32603, data=data, message='Error getting current minute', status=ngx.HTTP_SERVICE_UNAVAILABLE}
+    set_response_error{response=response, code=codes.HEALTH_CHECK_ERROR, data=data, message='Error getting current minute', status=ngx.HTTP_SERVICE_UNAVAILABLE}
     return
   end
 
@@ -144,7 +143,3 @@ local function go(config, response)
     }
   end
 end
-
-return {
-  go = go,
-}

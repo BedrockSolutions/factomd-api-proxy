@@ -1,37 +1,70 @@
+local cjson = require('cjson')
 local shared = require('shared')
 local get_header = shared.get_header
-local is_status_ok = shared.is_status_ok
+local is_response_error = shared.is_response_error
 
-local function log_entry(arg)
-  local log_level = is_status_ok(arg.status) and ngx.INFO or ngx.NOTICE
-  ngx.log(log_level, string.format('status: %d, message: "%s"', arg.status, arg.message))
+local function get_log_level(response)
+  local status = response.status
+
+  if status >= 200 and status < 300 then
+    return ngx.INFO
+  elseif status >= 400 and status < 500 then
+    return ngx.NOTICE
+  elseif status >= 500 and status < 520 then
+    return ngx.WARN
+  else
+    return ngx.ERROR
+  end
 end
 
-local function log_request(request, response)
-  local message
-  if request.error then
-    message = string.format('Request Error: %s', request.error)
+local function log_entry(log_level, payload)
+  ngx.log(log_level, cjson.encode(payload))
+end
 
-  elseif request.is_cors_preflight then
-    local origin = get_header('Origin') or 'Unknown'
-    local allowed_origin = ngx.header['Access-Control-Allow-Origin'] and 'ALLOWED' or 'DENIED'
-    message = string.format('CORS Preflight: %s -> %s', origin, allowed_origin)
+local function log_error(request, response, payload)
+  payload.code = response.json_rpc.error.code
+  payload.message = response.json_rpc.error.message
 
-  elseif request.is_health_check then
-    local health_check_result = is_status_ok(ngx.status) and 'PASSED' or 'FAILED'
-    message = string.format('Health Check: %s', health_check_result)
-
-  elseif request.is_api_call then
-    message = string.format('API Call: %s', request.json_rpc_call.method)
-
-  else
-    message = 'Logging Invariant Violation'
+  if request.is_api_call and request.json_rpc and request.json_rpc.method then
+    payload.jsonRpcMethod = request.json_rpc.method
   end
 
-  log_entry{}
+  log_entry(get_log_level(response), payload)
 end
 
-return {
-  log_entry = log_entry,
-  log_request = log_request,
-}
+local function log_result(request, response, payload)
+  local log_level = get_log_level(response)
+
+  if request.is_cors_preflight then
+    payload.message = 'Preflight allowed'
+
+  elseif request.is_health_check then
+    payload.message = 'Health check successful'
+
+  elseif request.is_api_call then
+    payload.jsonRpcMethod = request.json_rpc.method
+    payload.message = 'API call successful'
+
+  else
+    log_level = ngx.ERROR
+    payload.message = '!!! Logging Invariant Violation !!!'
+  end
+
+  log_entry(log_level, payload)
+end
+
+return function(request, response)
+  local payload = {
+    clientIP = request.client_ip,
+    method = ngx.req.get_method(),
+    origin = get_header('Origin'),
+    status = response.status,
+    uri = ngx.var.uri,
+  }
+
+  if is_response_error(response) then
+    log_error(request, response, payload)
+  else
+    log_result(request, response, payload)
+  end
+end

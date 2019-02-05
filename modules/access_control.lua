@@ -1,3 +1,4 @@
+local codes = require('json_rpc_codes')
 local ip_utils = require("ip_utils")
 local set_response_error = require('shared').set_response_error
 
@@ -13,7 +14,7 @@ local function check_access(request, response)
 
   if not is_access_allowed then
     local data = { clientIp = request.client_ip }
-    set_response_error{response=response, data=data, message='Access Denied', status=ngx.HTTP_FORBIDDEN}
+    set_response_error{response=response, code=codes.ACCESS_CONTROL_ERROR, data=data, message='Access Denied', status=ngx.HTTP_FORBIDDEN}
   end
 end
 

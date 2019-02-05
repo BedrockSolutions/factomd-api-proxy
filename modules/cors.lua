@@ -110,7 +110,7 @@ local function handle_get_and_post(arg)
   end
 end
 
-local function go(config, request, response)
+return function(config, request, response)
   local allow_origin = config.allow_origin
 
   if request.is_cors_preflight then
@@ -120,7 +120,3 @@ local function go(config, request, response)
     handle_get_and_post{allow_origin=allow_origin, response=response}
   end
 end
-
-return {
-  go = go,
-}
