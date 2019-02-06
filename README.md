@@ -42,7 +42,8 @@ Secret. No impedance mismatch!
 All configuration is done via one or more YAML configuration files mounted under the 
 `/home/app/values` directory. Configuration can be contained in a single file, multiple 
 files, and multiple directories. The `/home/app/values` directory will be recursively 
-traversed, and all files found will be merged to create the final configuration.
+traversed, and all files found with the `.yaml` suffix will be merged to create the final 
+configuration.
 
 ### Primary options
 
@@ -111,7 +112,7 @@ security.
 
 ## Examples
 
-### Proxy a factomd instance running on http://localhost:8088 to port 80
+### Proxy the Factom, Inc courtesy node to port 80
 
 #### Config file
 
@@ -129,8 +130,6 @@ docker run -d -p 80:8080 --name proxy bedrocksolutions/factomd-api-proxy:<tag>
 
 ```yaml
 corsAllowOrigin: '*'
-
-factomdUrl: http://courtesy-node.factom.com
 ```
 
 #### Docker run command
@@ -142,28 +141,28 @@ docker run -d \
   --name proxy bedrocksolutions/factomd-api-proxy:<tag>
 ```
 
-### Proxy the Factom, Inc. courtesy node, enable SSL, and enable CORS for a specific domain
+### Proxy a factomd instance located at http://factomd.mydomain.com:8080, enable SSL, and enable CORS for a specific domain
 
 > Note: this example uses multiple config files to illustrate that functionality
 
 #### Config files
 
-`general.yaml`
+`common.yaml`
 ```yaml
 corsAllowOrigin: '^https://www\\.foo\\.com$'
-
-factomdUrl: http://courtesy-node.factom.com
 ```
 
 `ssl.yaml`
 ```yaml
+factomdUrl: http://factomd.mydomain.com:8080
+
 ssl:
   certificate: |-
     -----BEGIN CERTIFICATE-----
-    ...certificate in the chain goes here...
+    ...certificate goes here...
     -----END CERTIFICATE-----
     -----BEGIN CERTIFICATE-----
-    ...certificate in the chain goes here...
+    ...optional root certificate in the chain goes here...
     -----END CERTIFICATE-----
   
   certificateKey: |-
