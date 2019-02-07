@@ -42,7 +42,88 @@ Secret. No impedance mismatch!
 All configuration is done via one or more YAML configuration files mounted under the 
 `/home/app/values` directory. Configuration can be contained in a single file, multiple 
 files, and multiple directories. The `/home/app/values` directory will be recursively 
-traversed, and all files found will be merged to create the final configuration.
+traversed, and all files found with the `.yaml` suffix will be merged to create the final 
+configuration.
+
+Steps to configuring the proxy:
+
+1. Create a directory to hold the configuration.
+    * You must create a directory. Do not attempt to mount just a file into the container!
+2. Place one or more YAML configuration files in the directory. 
+    * All configuration file names must have the `.yaml` extension.
+    * Only `.yaml` files will be read for configuration. All other files are ignored.
+    * Subdirectories can be created within the configuration directory if needed. 
+3. Mount the directory to the container's `/home/app/values` directory.
+    * The source path must be an absolute path.
+    * The destination path must be `/home/app/values`
+    * Example `docker` option: `-v /abs/path/to/config/dir:/home/app/values`
+4. Reconfigure the proxy by simply editing the configuration file(s) while the 
+container is running. 
+    * The Nginx process will automatically reload the changed config.
+    * Configuration errors will be reported in `docker logs`
+
+### Example
+
+Factomd is being deployed multiple times. There is configuration common to all deployments, as
+well as configuration specific to a given deployment.
+
+First, create a configuration directory:
+```bash
+mkdir proxy_config
+```
+Second, create a YAML file in the previous directory to hold common configuration:
+```yaml
+# ./proxy_config/common.yaml
+---
+accessControlWhitelist:
+- 1.2.3.0/24
+- 10.20.0.0/16
+
+corsAllowOrigin: "^https://my\\.domain\\.com$"
+
+factomdUrl: http://localhost:8080
+
+ssl:
+  trustedCertificate: |-
+    -----BEGIN CERTIFICATE-----
+    eTAeFw0xNjAyMjIxODI0MDBaFw0yMTAyMjIwMDI0MDBaMIGPMQswCQYDVQQGEwJV
+    UzETMBEGA1UECBMKQ2FsaWZvcm5pYTEWMBQGA1UEBxMNU2FuIEZyYW5jaXNjbzEZ
+    MBcGA1UEChMQQ2xvdWRGbGFyZSwgSW5jLjE4MDYGA1UECxMvQ2xvdWRGbGFyZSBP
+    tBoOOKcwHwYDVR0jBBgwFoAUhTBdOypw1O3VkmcH/es5tBoOOKcwCgYIKoZIzj0E
+    mcifak4CQsr+DH4pn5SJD7JxtCG3YGswW8QZsw==
+    -----END CERTIFICATE-----
+...
+```
+Third, create a YAML file to hold deployment-specific config:
+```yaml
+# ./proxy_config/local.yaml
+---
+ssl:
+  certificate: |-
+    -----BEGIN CERTIFICATE-----
+    eTAeFw0xNjAyMjIxODI0MDBaFw0yMTAyMjIwMDI0MDBaMIGPMQswCQYDVQQGEwJV
+    UzETMBEGA1UECBMKQ2FsaWZvcm5pYTEWMBQGA1UEBxMNU2FuIEZyYW5jaXNjbzEZ
+    MBcGA1UEChMQQ2xvdWRGbGFyZSwgSW5jLjE4MDYGA1UECxMvQ2xvdWRGbGFyZSBP
+    tBoOOKcwHwYDVR0jBBgwFoAUhTBdOypw1O3VkmcH/es5tBoOOKcwCgYIKoZIzj0E
+    mcifak4CQsr+DH4pn5SJD7JxtCG3YGswW8QZsw==
+    -----END CERTIFICATE-----
+    
+  certificateKey: |-
+    -----BEGIN PRIVATE KEY-----
+    eTAeFw0xNjAyMjIxODI0MDBaFw0yMTAyMjIwMDI0MDBaMIGPMQswCQYDVQQGEwJV
+    UzETMBEGA1UECBMKQ2FsaWZvcm5pYTEWMBQGA1UEBxMNU2FuIEZyYW5jaXNjbzEZ
+    MBcGA1UEChMQQ2xvdWRGbGFyZSwgSW5jLjE4MDYGA1UECxMvQ2xvdWRGbGFyZSBP
+    tBoOOKcwHwYDVR0jBBgwFoAUhTBdOypw1O3VkmcH/es5tBoOOKcwCgYIKoZIzj0E
+    mcifak4CQsr+DH4pn5SJD7JxtCG3YGswW8QZsw==
+    -----END PRIVATE KEY-----
+...
+```
+Forth, start the container:
+```bash
+docker run -d -p 443:8443 --name proxy \
+  -v /path/to/proxy_config:/home/app/values \
+  bedrocksolutions/factomd-api-proxy:0.4.0
+```
 
 ### Primary options
 
@@ -51,8 +132,10 @@ omitted, all addresses are allowed to connect. Example:
 
 ```yaml
 accessControlWhitelist:
+- 10.0.0.0/8
 - 192.168.0.0/16
 - 1.2.3.4
+- 5.6.7.8/32
 ```
 
 * **`corsAllowOrigin`:** Configures CORS. Three modes of operation are supported:
@@ -65,25 +148,27 @@ accessControlWhitelist:
   * `"<PERL Regular Expression>"`: Enables CORS only for origins that match the regular expression.
   Some examples:
   
-    * `^http://www\\.foo\\.com$`: Exact match of one domain.
+    * `^http://www\.foo\.com$`: Exact match of one domain.
     
-    * `^https?://.*foo\\.com$`: Matches all origins ending in `foo.com`. Both http
+    * `^https?://.*foo\.com$`: Matches all origins ending in `foo.com`. Both http
     and https URLs match.
     
-    * `^http://(foo|bar)\\.com$`: Exact match for either `http://foo.com`
+    * `^http://(foo|bar)\.com$`: Exact match for either `http://foo.com`
     or `http://bar.com`.
   
-  > Note: Special characters, such as the period, need to be escaped with a backslash. To insert
-  a literal backslash, escape it with a second backslash.
+  > Note: In a regex, special characters, such as the period, need to be escaped with a backslash.
   
 * **`factomdUrl`:** The URL of the upstream factomd instance. Defaults to `http://localhost:8088`.
 
 * **`listenPort`:** The port the proxy will listen on. Defaults to `8080` for non-SSL operation,
 and `8443` when SSL is enabled.
 
-* **`ssl.certificate`:** Certificate chain in PEM format. If this plus `ssl.certificateKey` are present,
-SSL will be enabled.
- 
+* **`ssl.certificate`:** Certificate chain in PEM format. If this plus `ssl.certificateKey` are 
+present, SSL will be enabled. Although it is possible specify just the server certificate here, 
+normally the entire chain of certificates should be specified, starting with the server certificate, 
+proceeding through zero or more intermediary certificates, and ending with the root certificate.
+All of these certificates will be sent to the client.
+
 * **`ssl.certificateKey`:** Private key in PEM format. If this plus `ssl.certificate` are present,
 SSL will be enabled.
  
@@ -109,9 +194,14 @@ security.
 
 * **`ssl.dhParam`:** Specifies the Diffie-Hellman key exchange parameters in PEM format.
 
+* **`ssl.trustedCertificate`:**  Certificate data in PEM format used to verify OCSP Stapling.
+Normally, the entire chain of certificates is specified in `ssl.certificate` and this option 
+is not needed. If sending the root certificate to the client is not desired, then it can be
+specified here instead.
+
 ## Examples
 
-### Proxy a factomd instance running on http://localhost:8088 to port 80
+### Proxy the Factom, Inc courtesy node to port 80
 
 #### Config file
 
@@ -129,8 +219,6 @@ docker run -d -p 80:8080 --name proxy bedrocksolutions/factomd-api-proxy:<tag>
 
 ```yaml
 corsAllowOrigin: '*'
-
-factomdUrl: http://courtesy-node.factom.com
 ```
 
 #### Docker run command
@@ -142,28 +230,28 @@ docker run -d \
   --name proxy bedrocksolutions/factomd-api-proxy:<tag>
 ```
 
-### Proxy the Factom, Inc. courtesy node, enable SSL, and enable CORS for a specific domain
+### Proxy a factomd instance located at http://factomd.mydomain.com:8080, enable SSL, and enable CORS for a specific domain
 
 > Note: this example uses multiple config files to illustrate that functionality
 
 #### Config files
 
-`general.yaml`
+`common.yaml`
 ```yaml
 corsAllowOrigin: '^https://www\\.foo\\.com$'
-
-factomdUrl: http://courtesy-node.factom.com
 ```
 
 `ssl.yaml`
 ```yaml
+factomdUrl: http://factomd.mydomain.com:8080
+
 ssl:
   certificate: |-
     -----BEGIN CERTIFICATE-----
-    ...certificate in the chain goes here...
+    ...certificate goes here...
     -----END CERTIFICATE-----
     -----BEGIN CERTIFICATE-----
-    ...certificate in the chain goes here...
+    ...optional root certificate in the chain goes here...
     -----END CERTIFICATE-----
   
   certificateKey: |-

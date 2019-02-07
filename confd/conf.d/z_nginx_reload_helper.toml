@@ -1,6 +1,6 @@
 [template]
-src = "default.conf.tmpl"
-dest = "/home/app/default.conf"
+src = "z_nginx_reload_helper.tmpl"
+dest = "/home/app/nginx_reload_helper.raw"
 owner = "app"
 mode = "0644"
 keys = [
@@ -23,3 +23,5 @@ keys = [
   "/ssl/sessionTimeout",
   "/ssl/trustedCertificate",
 ]
+check_cmd = "/usr/bin/openresty -t"
+reload_cmd = "/usr/bin/openresty -s reload"
