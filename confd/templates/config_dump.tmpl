@@ -1,0 +1,33 @@
+{{ join (getvs "/accessControlWhitelist/*") "," }}
+
+{{ getv "/corsAllowOrigin" "" }}
+
+{{ getv "/factomdUrl" }}
+
+{{ getv "/healthCheck/clockSpreadToleranceInSeconds" }}
+
+{{ getv "/healthCheck/maxBlockAgeInSeconds" }}
+
+{{ getv "/listenPort" "" }}
+
+{{ getv "/nginx/clientBodyBufferSize" }}
+
+{{ getv "/nginx/keepAliveRequests" }}
+
+{{ getv "/nginx/keepAliveTimeout" }}
+
+{{ getv "/ssl/bufferSize" }}
+
+{{ getv "/ssl/certificate" "" }}
+
+{{ getv "/ssl/certificateKey" "" }}
+
+{{ getv "/ssl/ciphers" }}
+
+{{ getv "/ssl/protocols" }}
+
+{{ getv "/ssl/sessionCacheSize" }}
+
+{{ getv "/ssl/sessionTimeout" }}
+
+{{ getv "/ssl/trustedCertificate" "" }}

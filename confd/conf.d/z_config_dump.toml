@@ -1,6 +1,6 @@
 [template]
-src = "default.conf.tmpl"
-dest = "/home/app/default.conf"
+src = "config_dump.tmpl"
+dest = "/home/app/config_dump"
 owner = "app"
 mode = "0644"
 keys = [
@@ -15,12 +15,13 @@ keys = [
   "/nginx/keepAliveTimeout",
   "/ssl/bufferSize",
   "/ssl/certificate",
-  "/ssl/ciphers",
   "/ssl/certificateKey",
+  "/ssl/ciphers",
   "/ssl/dhParam",
   "/ssl/protocols",
   "/ssl/sessionCacheSize",
   "/ssl/sessionTimeout",
   "/ssl/trustedCertificate",
 ]
+check_cmd = "/usr/bin/openresty -t"
 reload_cmd = "/usr/bin/openresty -s reload"

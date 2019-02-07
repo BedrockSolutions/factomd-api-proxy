@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -e
-
 confd -onetime -sync-only -config-file "/home/app/confd/confd.toml"
 
 {

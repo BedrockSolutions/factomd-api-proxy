@@ -1,0 +1,25 @@
+[template]
+src = "default.conf.tmpl"
+dest = "/home/app/default.conf"
+owner = "app"
+mode = "0644"
+keys = [
+  "/accessControlWhitelist",
+  "/corsAllowOrigin",
+  "/factomdUrl",
+  "/healthCheck/clockSpreadToleranceInSeconds",
+  "/healthCheck/maxBlockAgeInSeconds",
+  "/listenPort",
+  "/nginx/clientBodyBufferSize",
+  "/nginx/keepAliveRequests",
+  "/nginx/keepAliveTimeout",
+  "/ssl/bufferSize",
+  "/ssl/certificate",
+  "/ssl/certificateKey",
+  "/ssl/ciphers",
+  "/ssl/dhParam",
+  "/ssl/protocols",
+  "/ssl/sessionCacheSize",
+  "/ssl/sessionTimeout",
+  "/ssl/trustedCertificate",
+]
