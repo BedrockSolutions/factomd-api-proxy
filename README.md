@@ -238,7 +238,7 @@ docker run -d \
 
 `common.yaml`
 ```yaml
-corsAllowOrigin: '^https://www\\.foo\\.com$'
+corsAllowOrigin: '^https://www\.foo\.com$'
 ```
 
 `ssl.yaml`
