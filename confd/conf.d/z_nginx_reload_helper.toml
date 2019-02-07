@@ -1,6 +1,6 @@
 [template]
-src = "config_dump.tmpl"
-dest = "/home/app/config_dump"
+src = "z_nginx_reload_helper.tmpl"
+dest = "/home/app/nginx_reload_helper.raw"
 owner = "app"
 mode = "0644"
 keys = [
