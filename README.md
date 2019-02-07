@@ -45,7 +45,7 @@ files, and multiple directories. The `/home/app/values` directory will be recurs
 traversed, and all files found with the `.yaml` suffix will be merged to create the final 
 configuration.
 
-Steps to configuring the proxy:
+Steps to configure the proxy:
 
 1. Create a directory to hold the configuration.
     * You must create a directory. Do not attempt to mount just a file into the container!
@@ -53,14 +53,15 @@ Steps to configuring the proxy:
     * All configuration file names must have the `.yaml` extension.
     * Only `.yaml` files will be read for configuration. All other files are ignored.
     * Subdirectories can be created within the configuration directory if needed. 
-3. Mount the directory to the container's `/home/app/values` directory.
+3. Mount the directory to the container's `/home/app/values` directory during `docker run`.
     * The source path must be an absolute path.
     * The destination path must be `/home/app/values`
     * Example `docker` option: `-v /abs/path/to/config/dir:/home/app/values`
-4. Reconfigure the proxy by simply editing the configuration file(s) while the 
-container is running. 
-    * The Nginx process will automatically reload the changed config.
-    * Configuration errors will be reported in `docker logs`
+
+**To reconfigure the proxy, simply edit the configuration file(s) while the 
+container is running.**
+  * The Nginx process will automatically reload the changed config.
+  * Configuration errors will be reported in `docker logs`
 
 ### Example
 
@@ -158,7 +159,8 @@ accessControlWhitelist:
   
   > Note: In a regex, special characters, such as the period, need to be escaped with a backslash.
   
-* **`factomdUrl`:** The URL of the upstream factomd instance. Defaults to `http://localhost:8088`.
+* **`factomdUrl`:** The URL of the upstream factomd instance. Defaults 
+to `http://courtesy-node.factom.com`.
 
 * **`listenPort`:** The port the proxy will listen on. Defaults to `8080` for non-SSL operation,
 and `8443` when SSL is enabled.
@@ -213,12 +215,16 @@ None needed
 docker run -d -p 80:8080 --name proxy bedrocksolutions/factomd-api-proxy:<tag>
 ```
 
-### Proxy the Factom, Inc. courtesy node to port 80 and enable CORS wildcard mode
+### Proxy the Factom, Inc. courtesy node and enable CORS wildcard mode
 
 #### Config file
 
 ```yaml
+
+---
 corsAllowOrigin: '*'
+...
+
 ```
 
 #### Docker run command
@@ -230,19 +236,30 @@ docker run -d \
   --name proxy bedrocksolutions/factomd-api-proxy:<tag>
 ```
 
-### Proxy a factomd instance located at http://factomd.mydomain.com:8080, enable SSL, and enable CORS for a specific domain
+### Complex Example
 
-> Note: this example uses multiple config files to illustrate that functionality
+* Proxy a factomd instance located at http://factomd.mydomain.com:8080
+* Enable SSL
+* Enable CORS for a specific domain
+
+> Note: This example uses multiple config files.
 
 #### Config files
 
 `common.yaml`
+
 ```yaml
+
+---
 corsAllowOrigin: '^https://www\.foo\.com$'
+...
+
 ```
 
 `ssl.yaml`
 ```yaml
+
+---
 factomdUrl: http://factomd.mydomain.com:8080
 
 ssl:
@@ -258,6 +275,7 @@ ssl:
     -----BEGIN PRIVATE KEY-----
     ...private key goes here...
     -----END PRIVATE KEY-----
+...
 ```
 
 #### Docker run command
