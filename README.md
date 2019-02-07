@@ -45,6 +45,86 @@ files, and multiple directories. The `/home/app/values` directory will be recurs
 traversed, and all files found with the `.yaml` suffix will be merged to create the final 
 configuration.
 
+Steps to configuring the proxy:
+
+1. Create a directory to hold the configuration.
+    * You must create a directory. Do not attempt to mount just a file into the container!
+2. Place one or more YAML configuration files in the directory. 
+    * All configuration file names must have the `.yaml` extension.
+    * Only `.yaml` files will be read for configuration. All other files are ignored.
+    * Subdirectories can be created within the configuration directory if needed. 
+3. Mount the directory to the container's `/home/app/values` directory.
+    * The source path must be an absolute path.
+    * The destination path must be `/home/app/values`
+    * Example `docker` option: `-v /abs/path/to/config/dir:/home/app/values`
+4. Reconfigure the proxy by simply editing the configuration file(s) while the 
+container is running. 
+    * The Nginx process will automatically reload the changed config.
+    * Configuration errors will be reported in `docker logs`
+
+### Example
+
+Factomd is being deployed multiple times. There is configuration common to all deployments, as
+well as configuration specific to a given deployment.
+
+First, create a configuration directory:
+```bash
+mkdir proxy_config
+```
+Second, create a YAML file in the previous directory to hold common configuration:
+```yaml
+# ./proxy_config/common.yaml
+---
+accessControlWhitelist:
+- 1.2.3.0/24
+- 10.20.0.0/16
+
+corsAllowOrigin: "^https://my\\.domain\\.com$"
+
+factomdUrl: http://localhost:8080
+
+ssl:
+  trustedCertificate: |-
+    -----BEGIN CERTIFICATE-----
+    eTAeFw0xNjAyMjIxODI0MDBaFw0yMTAyMjIwMDI0MDBaMIGPMQswCQYDVQQGEwJV
+    UzETMBEGA1UECBMKQ2FsaWZvcm5pYTEWMBQGA1UEBxMNU2FuIEZyYW5jaXNjbzEZ
+    MBcGA1UEChMQQ2xvdWRGbGFyZSwgSW5jLjE4MDYGA1UECxMvQ2xvdWRGbGFyZSBP
+    tBoOOKcwHwYDVR0jBBgwFoAUhTBdOypw1O3VkmcH/es5tBoOOKcwCgYIKoZIzj0E
+    mcifak4CQsr+DH4pn5SJD7JxtCG3YGswW8QZsw==
+    -----END CERTIFICATE-----
+...
+```
+Third, create a YAML file to hold deployment-specific config:
+```yaml
+# ./proxy_config/local.yaml
+---
+ssl:
+  certificate: |-
+    -----BEGIN CERTIFICATE-----
+    eTAeFw0xNjAyMjIxODI0MDBaFw0yMTAyMjIwMDI0MDBaMIGPMQswCQYDVQQGEwJV
+    UzETMBEGA1UECBMKQ2FsaWZvcm5pYTEWMBQGA1UEBxMNU2FuIEZyYW5jaXNjbzEZ
+    MBcGA1UEChMQQ2xvdWRGbGFyZSwgSW5jLjE4MDYGA1UECxMvQ2xvdWRGbGFyZSBP
+    tBoOOKcwHwYDVR0jBBgwFoAUhTBdOypw1O3VkmcH/es5tBoOOKcwCgYIKoZIzj0E
+    mcifak4CQsr+DH4pn5SJD7JxtCG3YGswW8QZsw==
+    -----END CERTIFICATE-----
+    
+  certificateKey: |-
+    -----BEGIN PRIVATE KEY-----
+    eTAeFw0xNjAyMjIxODI0MDBaFw0yMTAyMjIwMDI0MDBaMIGPMQswCQYDVQQGEwJV
+    UzETMBEGA1UECBMKQ2FsaWZvcm5pYTEWMBQGA1UEBxMNU2FuIEZyYW5jaXNjbzEZ
+    MBcGA1UEChMQQ2xvdWRGbGFyZSwgSW5jLjE4MDYGA1UECxMvQ2xvdWRGbGFyZSBP
+    tBoOOKcwHwYDVR0jBBgwFoAUhTBdOypw1O3VkmcH/es5tBoOOKcwCgYIKoZIzj0E
+    mcifak4CQsr+DH4pn5SJD7JxtCG3YGswW8QZsw==
+    -----END PRIVATE KEY-----
+...
+```
+Forth, start the container:
+```bash
+docker run -d -p 443:8443 --name proxy \
+  -v /path/to/proxy_config:/home/app/values \
+  bedrocksolutions/factomd-api-proxy:0.4.0
+```
+
 ### Primary options
 
 * **`accessControlWhitelist`:** An array of allowed IP addresses and IP networks in CIDR format. If
@@ -52,8 +132,10 @@ omitted, all addresses are allowed to connect. Example:
 
 ```yaml
 accessControlWhitelist:
+- 10.0.0.0/8
 - 192.168.0.0/16
 - 1.2.3.4
+- 5.6.7.8/32
 ```
 
 * **`corsAllowOrigin`:** Configures CORS. Three modes of operation are supported:
@@ -66,16 +148,15 @@ accessControlWhitelist:
   * `"<PERL Regular Expression>"`: Enables CORS only for origins that match the regular expression.
   Some examples:
   
-    * `^http://www\\.foo\\.com$`: Exact match of one domain.
+    * `^http://www\.foo\.com$`: Exact match of one domain.
     
-    * `^https?://.*foo\\.com$`: Matches all origins ending in `foo.com`. Both http
+    * `^https?://.*foo\.com$`: Matches all origins ending in `foo.com`. Both http
     and https URLs match.
     
-    * `^http://(foo|bar)\\.com$`: Exact match for either `http://foo.com`
+    * `^http://(foo|bar)\.com$`: Exact match for either `http://foo.com`
     or `http://bar.com`.
   
-  > Note: Special characters, such as the period, need to be escaped with a backslash. To insert
-  a literal backslash, escape it with a second backslash.
+  > Note: In a regex, special characters, such as the period, need to be escaped with a backslash.
   
 * **`factomdUrl`:** The URL of the upstream factomd instance. Defaults to `http://localhost:8088`.
 

@@ -92,7 +92,7 @@ server {
   location / {
     rewrite_by_lua_block {
       local config = {
-        allow_origin = '{{ $corsAllowOrigin }}',
+        allow_origin = '{{ replace $corsAllowOrigin "\\" "\\\\" -1 }}',
         clock_spread_tolerance = tonumber({{ $healthCheckClockSpreadTolerance }}),
         max_block_age = tonumber({{ $healthCheckMaxBlockAge }}),
         ssl_enabled = {{ $sslEnabled }}
