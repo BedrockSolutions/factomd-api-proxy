@@ -66,4 +66,7 @@ ssl:
 
   # http://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_timeout
   sessionTimeout: 1d
+
+  # http://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_trusted_certificate
+  trustedCertificate: null
 ...

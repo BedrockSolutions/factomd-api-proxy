@@ -14,6 +14,7 @@
 {{- $sslProtocols := getv "/ssl/protocols" -}}
 {{- $sslSessionCacheSize := getv "/ssl/sessionCacheSize" -}}
 {{- $sslSessionTimeout := getv "/ssl/sessionTimeout" -}}
+{{- $sslTrustedCertificate := getv "/ssl/trustedCertificate" "" -}}
 
 {{- $sslEnabled := and (gt (len $sslCertificate) 0) (gt (len $sslCertificateKey) 0) -}}
 {{- $defaultPort := or (and $sslEnabled 8443) 8080 -}}
@@ -83,6 +84,9 @@ server {
   ssl_session_timeout {{ $sslSessionTimeout }};
   ssl_stapling on;
   ssl_stapling_verify on;
+{{- if gt (len $sslTrustedCertificate) 0 }}
+  ssl_trusted_certificate /home/app/ssl/trusted_certificate.pem;
+{{- end -}}
 {{ end }}
 
   location / {

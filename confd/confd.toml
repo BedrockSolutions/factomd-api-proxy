@@ -2,5 +2,4 @@ backend = "file"
 confdir = "/home/app/confd"
 file = ["/home/app/defaults.yaml", "/home/app/values"]
 filter = "*.yaml"
-interval = 10
 watch = false

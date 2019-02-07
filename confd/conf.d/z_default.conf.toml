@@ -17,9 +17,10 @@ keys = [
   "/ssl/certificate",
   "/ssl/ciphers",
   "/ssl/certificateKey",
+  "/ssl/dhParam",
   "/ssl/protocols",
   "/ssl/sessionCacheSize",
   "/ssl/sessionTimeout",
+  "/ssl/trustedCertificate",
 ]
-check_cmd = "/usr/bin/openresty -t"
 reload_cmd = "/usr/bin/openresty -s reload"

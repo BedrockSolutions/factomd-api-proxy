@@ -82,9 +82,12 @@ accessControlWhitelist:
 * **`listenPort`:** The port the proxy will listen on. Defaults to `8080` for non-SSL operation,
 and `8443` when SSL is enabled.
 
-* **`ssl.certificate`:** Certificate chain in PEM format. If this plus `ssl.certificateKey` are present,
-SSL will be enabled.
- 
+* **`ssl.certificate`:** Certificate chain in PEM format. If this plus `ssl.certificateKey` are 
+present, SSL will be enabled. Although it is possible specify just the server certificate here, 
+normally the entire chain of certificates should be specified, starting with the server certificate, 
+proceeding through zero or more intermediary certificates, and ending with the root certificate.
+All of these certificates will be sent to the client.
+
 * **`ssl.certificateKey`:** Private key in PEM format. If this plus `ssl.certificate` are present,
 SSL will be enabled.
  
@@ -109,6 +112,11 @@ format understood by the OpenSSL library. The full list can be viewed by issuing
 security.
 
 * **`ssl.dhParam`:** Specifies the Diffie-Hellman key exchange parameters in PEM format.
+
+* **`ssl.trustedCertificate`:**  Certificate data in PEM format used to verify OCSP Stapling.
+Normally, the entire chain of certificates is specified in `ssl.certificate` and this option 
+is not needed. If sending the root certificate to the client is not desired, then it can be
+specified here instead.
 
 ## Examples
 
