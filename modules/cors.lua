@@ -9,7 +9,7 @@ local function is_wildcard_origin(allow_origin)
 end
 
 local function is_cors_disabled(allow_origin)
-  return allow_origin == nil or allow_origin == ''
+  return not allow_origin or allow_origin == ''
 end
 
 local function is_origin_allowed(allow_origin, origin)
@@ -47,7 +47,7 @@ local function handle_options(arg)
   local origin = get_header('Origin')
 
   -- Check that the Origin header is present
-  if not origin then
+  if not origin or origin == '' then
     set_response_error{response=response, code=codes.CORS_ERROR, message='Origin header missing', status=ngx.HTTP_NOT_FOUND}
     return
   end
@@ -101,7 +101,7 @@ local function handle_get_and_post(arg)
 
   local origin = get_header('Origin')
 
-  if not origin then
+  if not origin or origin == '' then
     return
   end
 
