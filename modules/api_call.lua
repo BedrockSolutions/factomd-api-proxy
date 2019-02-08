@@ -13,7 +13,7 @@ return function(request, response)
   local data = { factomdResponse = api_response }
   local message
 
-  if not api_response.body then
+  if not api_response.body or api_response.body == "" then
     message = 'No response received from factomd'
 
   else
