@@ -9,7 +9,7 @@ local function is_wildcard_origin(allow_origin)
 end
 
 local function is_cors_disabled(allow_origin)
-  return allow_origin == nil or allow_origin == ''
+  return not allow_origin or allow_origin == ''
 end
 
 local function is_origin_allowed(allow_origin, origin)
