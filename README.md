@@ -189,8 +189,14 @@ behind cloud load balancers.
 connection will stay open on the server side. The default value is tuned so that 
 the proxy will work correctly behind cloud load balancers.
 
+* **`nginx.proxyBuffering`:** Toggles buffering of response data sent from an upstream factomd
+to the proxy.
+
 * **`nginx.proxyConnectTimeout`:** Sets the timeout for connections to the upstream
 factomd instance.
+
+* **`nginx.proxyRequestBuffering`:** Toggles buffering of request data sent from the client
+to the proxy.
 
 * **`ssl.ciphers`:** Specifies the enabled SSL ciphers. The ciphers are specified in the 
 format understood by the OpenSSL library. The full list can be viewed by issuing the 
