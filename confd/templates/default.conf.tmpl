@@ -7,6 +7,7 @@
 {{- $keepAliveRequests := getv "/nginx/keepAliveRequests" -}}
 {{- $keepAliveTimeout := getv "/nginx/keepAliveTimeout" -}}
 {{- $listenPort := getv "/listenPort" "" -}}
+{{- $proxyConnectTimeout := getv "/nginx/proxyConnectTimeout" -}}
 {{- $sslBufferSize := getv "/ssl/bufferSize" -}}
 {{- $sslCertificate := getv "/ssl/certificate" "" -}}
 {{- $sslCiphers := getv "/ssl/ciphers" -}}
@@ -105,6 +106,7 @@ server {
   location = /factomd {
     internal;
 
+    proxy_connect_timeout {{ $proxyConnectTimeout }};
     proxy_set_header Forwarded $proxy_add_forwarded;
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

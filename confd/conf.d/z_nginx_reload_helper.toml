@@ -13,6 +13,7 @@ keys = [
   "/nginx/clientBodyBufferSize",
   "/nginx/keepAliveRequests",
   "/nginx/keepAliveTimeout",
+  "/nginx/proxyConnectTimeout",
   "/ssl/bufferSize",
   "/ssl/certificate",
   "/ssl/certificateKey",
