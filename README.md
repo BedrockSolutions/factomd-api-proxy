@@ -189,6 +189,9 @@ behind cloud load balancers.
 connection will stay open on the server side. The default value is tuned so that 
 the proxy will work correctly behind cloud load balancers.
 
+* **`nginx.proxyConnectTimeout`:** Sets the timeout for connections to the upstream
+factomd instance.
+
 * **`ssl.ciphers`:** Specifies the enabled SSL ciphers. The ciphers are specified in the 
 format understood by the OpenSSL library. The full list can be viewed by issuing the 
 `openssl ciphers` command. The default is a very selective cipher suite that gives maximum
