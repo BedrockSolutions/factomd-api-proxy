@@ -5,7 +5,7 @@ accessControlWhitelist:
 corsAllowOrigin: null
 
 # List of upstream factomd instances. Host/IP with optional port
-factomdNodes:
+factomdPool:
 - courtesy-node.factom.com
 
 healthCheck:

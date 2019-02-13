@@ -159,8 +159,8 @@ accessControlWhitelist:
   
   > Note: In a regex, special characters, such as the period, need to be escaped with a backslash.
   
-* **`factomdUrl`:** The URL of the upstream factomd instance. Defaults 
-to `http://courtesy-node.factom.com`.
+* **`factomdPool`:** An array of upstream factomd instances. Defaults 
+to `['http://courtesy-node.factom.com']`.
 
 * **`listenPort`:** The port the proxy will listen on. Defaults to `8080` for non-SSL operation,
 and `8443` when SSL is enabled.
@@ -194,6 +194,8 @@ to the proxy.
 
 * **`nginx.proxyConnectTimeout`:** Sets the timeout for connections to the upstream
 factomd instance.
+
+* **`nginx.proxyProtocol`:** The protocol to use when connecting to upstream factomd instances.
 
 * **`nginx.proxyRequestBuffering`:** Toggles buffering of request data sent from the client
 to the proxy.

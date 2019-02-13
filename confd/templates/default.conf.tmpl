@@ -1,7 +1,7 @@
 {{- $accessControlWhitelist := getvs "/accessControlWhitelist/*" -}}
 {{- $clientBodyBufferSize := getv "/nginx/clientBodyBufferSize" -}}
 {{- $corsAllowOrigin := getv "/corsAllowOrigin" "" -}}
-{{- $factomdNodes := getvs "/factomdNodes/*" -}}
+{{- $factomdPool := getvs "/factomdPool/*" -}}
 {{- $healthCheckMaxBlockAge := getv "/healthCheck/maxBlockAgeInSeconds" -}}
 {{- $healthCheckClockSpreadTolerance := getv "/healthCheck/clockSpreadToleranceInSeconds" -}}
 {{- $keepAliveRequests := getv "/nginx/keepAliveRequests" -}}
@@ -59,7 +59,8 @@ init_by_lua_block {
 }
 
 upstream factomd {
-{{- range $factomdNodes }}
+  ip_hash;
+{{- range $factomdPool }}
   server {{ . }};
 {{- end }}
 }
