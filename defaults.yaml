@@ -1,9 +1,10 @@
 ---
 accessControlWhitelist:
-  - 0.0.0.0/0
+- 0.0.0.0/0
 
 corsAllowOrigin: null
 
+# Upstream factomd instance. URL with protocol, host or IP, and optional port
 factomdUrl: http://courtesy-node.factom.com
 
 healthCheck:
@@ -27,8 +28,14 @@ nginx:
   # https://blog.percy.io/tuning-nginx-behind-google-cloud-platform-http-s-load-balancer-305982ddb340
   keepAliveTimeout: 650s
 
+  # http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering
+  proxyBuffering: off
+
   # http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_connect_timeout
   proxyConnectTimeout: 5s
+
+  # http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_request_buffering
+  proxyRequestBuffering: off
 
 ssl:
 
