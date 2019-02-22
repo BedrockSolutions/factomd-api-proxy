@@ -2,7 +2,7 @@
 
 {{ getv "/corsAllowOrigin" "" }}
 
-{{ join (getvs "/factomdPool/*") "," }}
+{{ getv "/factomdUrl" }}
 
 {{ getv "/healthCheck/clockSpreadToleranceInSeconds" }}
 
@@ -19,8 +19,6 @@
 {{ getv "/nginx/proxyBuffering" }}
 
 {{ getv "/nginx/proxyConnectTimeout" }}
-
-{{ getv "/nginx/proxyProtocol" }}
 
 {{ getv "/nginx/proxyRequestBuffering" }}
 

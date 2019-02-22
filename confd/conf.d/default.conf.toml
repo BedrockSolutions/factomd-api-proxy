@@ -6,7 +6,7 @@ mode = "0644"
 keys = [
   "/accessControlWhitelist",
   "/corsAllowOrigin",
-  "/factomdPool",
+  "/factomdUrl",
   "/healthCheck/clockSpreadToleranceInSeconds",
   "/healthCheck/maxBlockAgeInSeconds",
   "/listenPort",
@@ -15,7 +15,6 @@ keys = [
   "/nginx/keepAliveTimeout",
   "/nginx/proxyBuffering",
   "/nginx/proxyConnectTimeout",
-  "/nginx/proxyProtocol",
   "/nginx/proxyRequestBuffering",
   "/ssl/bufferSize",
   "/ssl/certificate",

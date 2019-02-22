@@ -1,7 +1,7 @@
 {{- $accessControlWhitelist := getvs "/accessControlWhitelist/*" -}}
 {{- $clientBodyBufferSize := getv "/nginx/clientBodyBufferSize" -}}
 {{- $corsAllowOrigin := getv "/corsAllowOrigin" "" -}}
-{{- $factomdPool := getvs "/factomdPool/*" -}}
+{{- $factomdUrl := getv "/factomdUrl" -}}
 {{- $healthCheckMaxBlockAge := getv "/healthCheck/maxBlockAgeInSeconds" -}}
 {{- $healthCheckClockSpreadTolerance := getv "/healthCheck/clockSpreadToleranceInSeconds" -}}
 {{- $keepAliveRequests := getv "/nginx/keepAliveRequests" -}}
@@ -9,7 +9,6 @@
 {{- $listenPort := getv "/listenPort" "" -}}
 {{- $proxyBuffering := getv "/nginx/proxyBuffering" -}}
 {{- $proxyConnectTimeout := getv "/nginx/proxyConnectTimeout" -}}
-{{- $proxyProtocol := getv "/nginx/proxyProtocol" -}}
 {{- $proxyRequestBuffering := getv "/nginx/proxyRequestBuffering" -}}
 {{- $sslBufferSize := getv "/ssl/bufferSize" -}}
 {{- $sslCertificate := getv "/ssl/certificate" "" -}}
@@ -56,13 +55,6 @@ init_by_lua_block {
   }
 
   require('access_control').init_whitelist(access_control_whitelist)
-}
-
-upstream factomd {
-  ip_hash;
-{{- range $factomdPool }}
-  server {{ . }};
-{{- end }}
 }
 
 server {
@@ -124,6 +116,6 @@ server {
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
     proxy_set_header X-Real-IP $remote_addr;
-    proxy_pass {{ $proxyProtocol }}://factomd/v2;
+    proxy_pass {{ $factomdUrl }}/v2;
   }
 }
