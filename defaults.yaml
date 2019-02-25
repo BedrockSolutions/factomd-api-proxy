@@ -28,14 +28,14 @@ nginx:
   # https://blog.percy.io/tuning-nginx-behind-google-cloud-platform-http-s-load-balancer-305982ddb340
   keepAliveTimeout: 650s
 
-  # http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering
-  proxyBuffering: off
-
   # http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_connect_timeout
   proxyConnectTimeout: 5s
 
   # http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_request_buffering
-  proxyRequestBuffering: off
+  requestBuffering: false
+
+  # http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering
+  responseBuffering: false
 
 rateLimiting:
 
@@ -61,9 +61,11 @@ ssl:
   bufferSize: 4k
 
   # Certificate or certificate chain in PEM format
+  # http://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_certificate
   certificate: null
 
   # Certificate private key in PEM format
+  # http://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_certificate_key
   certificateKey: null
 
   # http://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_ciphers
@@ -95,6 +97,7 @@ ssl:
   # http://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_timeout
   sessionTimeout: 1d
 
+  # Certificate chain used to verify OCSP responses
   # http://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_trusted_certificate
   trustedCertificate: null
 ...

@@ -9,9 +9,9 @@
 {{- $keepAliveRequests := getv "/nginx/keepAliveRequests" -}}
 {{- $keepAliveTimeout := getv "/nginx/keepAliveTimeout" -}}
 {{- $listenPort := getv "/listenPort" "" -}}
-{{- $proxyBuffering := getv "/nginx/proxyBuffering" -}}
+{{- $responseBuffering := getv "/nginx/responseBuffering" -}}
 {{- $proxyConnectTimeout := getv "/nginx/proxyConnectTimeout" -}}
-{{- $proxyRequestBuffering := getv "/nginx/proxyRequestBuffering" -}}
+{{- $requestBuffering := getv "/nginx/requestBuffering" -}}
 {{- $maxWritesPerBlock := getv "/rateLimiting/maxWritesPerBlock" -}}
 {{- $maxWritesPerSecond := getv "/rateLimiting/maxWritesPerSecond" -}}
 {{- $sslBufferSize := getv "/ssl/bufferSize" -}}
@@ -125,9 +125,9 @@ server {
   location = /factomd {
     internal;
 
-    proxy_buffering {{ if eq $proxyBuffering "on" }}on{{ else }}off{{ end }};
+    proxy_buffering {{ if eq $responseBuffering "on" }}on{{ else }}off{{ end }};
     proxy_connect_timeout {{ $proxyConnectTimeout }};
-    proxy_request_buffering {{ if eq $proxyRequestBuffering "on" }}on{{ else }}off{{ end }};
+    proxy_request_buffering {{ if eq $requestBuffering "on" }}on{{ else }}off{{ end }};
     proxy_set_header Forwarded $proxy_add_forwarded;
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
