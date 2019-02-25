@@ -50,12 +50,12 @@ local function enforce_limits(request, response)
     local block_reset = math.ceil(ngx.now() + block_time_remaining_raw)
 
     response.headers['X-RateLimit-BlockDuration'] = block_duration
-    response.headers['X-RateLimit-BlockQuota'] = max_writes_per_block
-    response.headers['X-RateLimit-BlockQuotaRemaining'] = block_writes_remaining
+    response.headers['X-RateLimit-MaxWritesPerBlock'] = max_writes_per_block
+    response.headers['X-RateLimit-BlockWritesRemaining'] = block_writes_remaining
     response.headers['X-RateLimit-BlockResetTime'] = block_reset
 
-    response.headers['X-RateLimit-ThrottleRejectRate'] = burst_writes_per_second
-    response.headers['X-RateLimit-ThrottleStartRate'] = max_writes_per_second
+    response.headers['X-RateLimit-MaxBurstWritesPerSecond'] = burst_writes_per_second
+    response.headers['X-RateLimit-MaxWritesPerSecond'] = max_writes_per_second
 
     print("delay: ", delay, ", excess: ", states[1])
 
@@ -89,8 +89,8 @@ local function enforce_limits(request, response)
       set_response_error{response=response, code=codes.RATE_LIMIT_ERROR, data=data, message=message, status=status}
 
     elseif delay > 0.001 then
-      response.headers['X-RateLimit-ThrottleDelay'] = delay
-      response.headers['X-RateLimit-ThrottleBurstRate'] = max_writes_per_second + states[1]
+      response.headers['X-RateLimit-WriteDelay'] = delay
+      response.headers['X-RateLimit-WritesPerSecond'] = max_writes_per_second + states[1]
       ngx.sleep(delay)
     end
   end
