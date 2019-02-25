@@ -9,7 +9,9 @@ local parse_and_validate_request = require('parse_and_validate_request')
 local rate_limiting = require('rate_limiting')
 local is_response_error = require('shared').is_response_error
 
-local function global_headers(ssl_enabled, response)
+local ssl_enabled
+
+local function global_headers(response)
   response.headers['Content-Security-Policy'] = "default-src 'none'"
   response.headers['Content-Type'] = 'application/json; charset=utf-8'
   response.headers['Referrer-Policy'] = 'same-origin'
@@ -62,26 +64,30 @@ local function send_response(response)
 end
 
 local function init(config)
+  ssl_enabled = config.ssl_enabled
+
   access_control.init(config)
+  cors.init(config)
+  health_check.init(config)
   rate_limiting.init(config)
 end
 
-local function go(config)
+local function go()
   local request = init_request_object()
   local response = init_response_object()
 
-  global_headers(config.ssl_enabled, response)
+  global_headers(response)
 
   access_control.check_access(request, response)
 
   if not is_response_error(response) then
     pcall(parse_and_validate_request, request, response)
 
-    cors(config, request, response)
+    cors.add_cors_headers(request, response)
 
     if not is_response_error(response) then
       if request.is_health_check then
-        health_check(config, response)
+        health_check.perform_check(response)
 
       elseif request.is_api_call then
         rate_limiting.enforce_limits(request, response)

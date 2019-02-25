@@ -6,6 +6,8 @@ local shared = require('shared')
 local is_status_ok = shared.is_status_ok
 local set_response_error = shared.set_response_error
 
+local clock_spread_tolerance, max_block_age
+
 local function factomd_api_call(method)
   local json_rpc = {
     id = 0,
@@ -25,30 +27,23 @@ local function nanoseconds_to_seconds(ns)
   return math.floor((ns / 1000000000) + 0.5)
 end
 
-local function send_response(payload, status)
-  local json_payload = cjson.encode(payload)
-  ngx.status = status
-  ngx.header['Content-Length'] = string.len(json_payload)
-  ngx.print(json_payload)
-end
-
 local function get_response_data(res)
   return cjson.decode(res.body).result
 end
 
-local function create_data_object(arg)
-  local heights_data = get_response_data(arg.heights_res)
-  local current_minute_data = get_response_data(arg.current_minute_res)
+local function create_data_object(heights_res, current_minute_res)
+  local heights_data = get_response_data(heights_res)
+  local current_minute_data = get_response_data(current_minute_res)
 
   local data = {
     isHealthy = false,
     clocks = {
       factomd = nanoseconds_to_seconds(current_minute_data.currenttime),
       proxy = os.time(),
-      spreadTolerance = arg.config.clock_spread_tolerance,
+      spreadTolerance = clock_spread_tolerance,
     },
     currentBlock = {
-      maxAge = arg.config.max_block_age,
+      maxAge = max_block_age,
       startTime = nanoseconds_to_seconds(current_minute_data.currentblockstarttime),
     },
     currentMinute = {
@@ -86,7 +81,12 @@ local function create_data_object(arg)
   return data
 end
 
-return function(config, response)
+local function init(config)
+  clock_spread_tolerance = config.clock_spread_tolerance
+  max_block_age = config.max_block_age
+end
+
+local function perform_check(response)
   local heights_res = factomd_api_call('heights')
 
   if not is_status_ok(heights_res.status) then
@@ -103,7 +103,7 @@ return function(config, response)
     return
   end
 
-  local data = create_data_object{heights_res=heights_res, current_minute_res=current_minute_res, config=config}
+  local data = create_data_object(heights_res, current_minute_res)
 
   local message
 
@@ -143,3 +143,8 @@ return function(config, response)
     }
   end
 end
+
+return {
+  init = init,
+  perform_check = perform_check,
+}

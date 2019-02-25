@@ -17,7 +17,7 @@ keys = [
   "/nginx/proxyConnectTimeout",
   "/nginx/requestBuffering",
   "/rateLimiting/blockDurationInSeconds",
-  "/rateLimiting/burstWritesPerSecond",
+  "/rateLimiting/maxBurstWritesPerSecond",
   "/rateLimiting/maxWritesPerBlock",
   "/rateLimiting/maxWritesPerSecond",
   "/rateLimiting/writeMethods",

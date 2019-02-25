@@ -34,11 +34,54 @@ perfectly with Kubernetes configuration patterns. Painlessly store most of the c
 in one or more ConfigMaps, while storing sensitive data such as the SSL private key in a 
 Secret. No impedance mismatch!
 
-## Supported tags and Dockerfile links
+## Supported Tags and Dockerfile Links
 
 * [`latest` (*Dockerfile*)](https://github.com/BedrockSolutions/factomd-api-proxy/blob/master/Dockerfile)
   
 * [`0.5.0` (*Dockerfile*)](https://github.com/BedrockSolutions/factomd-api-proxy/blob/0.5.0/Dockerfile)
+
+## In-depth Feature Discussion
+
+### Rate Limiting
+
+The rate limiting subsystem can limit writes-per-second and writes-per-block. Default configuration
+enables both modes with sensible defaults.
+
+#### Writes-per-second limiting
+
+WPS limiting helps control bursts of write activity on the network.
+Two settings control WPS limiting: `rateLimiting.maxWritesPerSecond` and 
+`rateLimiting.maxBurstWritesPerSecond`. Together, these two settings create three rate 
+limiting regions:
+
+```
+0 |--- A ---| maxWritesPerSecond |--- B ---| maxBurstWritesPerSecond |--- C --->
+```
+In region "A" the WPS is below the `maxWritesPerSecond` value. All write requests sent
+to the proxy will be immediately sent to the upstream factomd.
+
+In region "B" the WPS is between the `maxWritesPerSecond` and `maxBurstWritesPerSecond`
+values. Write requests will be sent to the upstream factomd at the `maxWritesPerSecond`
+rate. Requests will be delayed by the proxy by some amount so that the writes are
+spread over a longer time period.
+
+In region "C" the WPS is greater than the `maxBurstWritesPerSecond` value. Write requests 
+will be sent to the upstream factomd at the `maxWritesPerSecond` rate. Some requests
+will be delayed by the proxy as in region "B". Other requests will be immediately
+rejected with an HTTP 429 error.
+
+#### Writes-per-block limiting
+
+WPB limiting helps keep the number of writes in a given block within more reasonable
+limits.
+Two settings control WPB limiting: `rateLimiting.blockDurationInSeconds` and
+`rateLimiting.maxWritesPerBlock`. 
+
+> In WPB limiting, the concept of a block is simply a duration. It does not actually 
+line up with the beginning and end of a block on the blockchain.
+
+WPB limiting sets the maximum number of writes allowed over a set interval. If the 
+write quota is exceeded, the request will be rejected with an HTTP 429 error.
 
 ## Configuration
 
@@ -68,8 +111,10 @@ container is running.**
 
 ### Example
 
-Factomd is being deployed multiple times. There is configuration common to all deployments, as
-well as configuration specific to a given deployment.
+In this example, configuration has been split between two files. The `common.yaml` file holds
+configuration common to all proxy instances being deployed. The `local.yaml` file holds 
+configuration specific to a given proxy instance. To bootstrap a given proxy instance, both
+files are needed.
 
 First, create a configuration directory:
 ```bash
@@ -83,7 +128,7 @@ accessControlWhitelist:
 - 1.2.3.0/24
 - 10.20.0.0/16
 
-corsAllowOrigin: "^https://my\\.domain\\.com$"
+corsAllowOrigin: "^https://my\.domain\.com$"
 
 factomdUrl: http://localhost:8080
 
@@ -129,7 +174,7 @@ docker run -d -p 443:8443 --name proxy \
   bedrocksolutions/factomd-api-proxy:0.5.0
 ```
 
-### Primary options
+## Primary options
 
 * **`accessControlWhitelist`:** An array of allowed IP addresses and IP networks in CIDR format. If
 omitted, all addresses are allowed to connect. Example:
@@ -171,7 +216,7 @@ and `8443` when SSL is enabled.
 * **`rateLimiting.blockDurationInSeconds`:** The duration of a rate-limiting block.
 Defaults to 600.
 
-* **`rateLimiting.burstWritesPerSecond`:** The maximum writes-per-second that will be buffered
+* **`rateLimiting.maxBurstWritesPerSecond`:** The maximum writes-per-second that will be buffered
 before requests are rejected. Defaults to 10.
 
 * **`rateLimiting.maxWritesPerBlock`:** The maximum number of writes that can be sent during a 
@@ -193,7 +238,7 @@ SSL will be enabled.
 * **`ssl.trustedCertificate`:**  Certificate chain of intermediate and root certificates,
 in PEM format. Used to verify OCSP Stapling.
 
-### Secondary options
+## Secondary options
 
 * **`nginx.clientBodyBufferSize`:** Specifies the size and the max size of the client
 request buffer. The default should be plenty generous for the vast majority of API

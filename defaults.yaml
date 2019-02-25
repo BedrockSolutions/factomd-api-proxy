@@ -41,7 +41,7 @@ rateLimiting:
 
   blockDurationInSeconds: 600
 
-  burstWritesPerSecond: 10
+  maxBurstWritesPerSecond: 10
 
   maxWritesPerBlock: 600
 
