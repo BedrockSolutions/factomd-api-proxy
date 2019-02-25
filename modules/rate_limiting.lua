@@ -64,11 +64,11 @@ local function enforce_limits(request, response)
 
       local data = {
         blockDuration = block_duration,
-        blockQuota = max_writes_per_block,
-        blockQuotaRemaining = block_writes_remaining,
         blockResetTime = block_reset,
-        throttleRejectRate = burst_writes_per_second,
-        throttleStartRate = max_writes_per_second,
+        blockWritesRemaining = block_writes_remaining,
+        maxBurstWritesPerSecond = burst_writes_per_second,
+        maxWritesPerBlock = max_writes_per_block,
+        maxWritesPerSecond = max_writes_per_second,
       }
 
       if err == 'rejected' then
@@ -76,9 +76,13 @@ local function enforce_limits(request, response)
         if block_writes_remaining == -1 then
           message = 'Block write quota exceeded'
           response.headers['Retry-After'] = block_time_remaining
+          data.retryAfter = block_time_remaining
         else
+          local retry_after = math.ceil(burst_writes_per_second / max_writes_per_second)
+
           message = 'Max writes per second exceeded'
-          response.headers['Retry-After'] = math.ceil(burst_writes_per_second / max_writes_per_second)
+          response.headers['Retry-After'] = retry_after
+          data.retryAfter = retry_after
         end
 
       else
