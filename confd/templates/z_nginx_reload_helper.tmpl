@@ -22,6 +22,16 @@
 
 {{ getv "/nginx/proxyRequestBuffering" }}
 
+{{ getv "/rateLimiting/blockDurationInSeconds" }}
+
+{{ getv "/rateLimiting/burstWritesPerSecond" }}
+
+{{ getv "/rateLimiting/maxWritesPerBlock" }}
+
+{{ getv "/rateLimiting/maxWritesPerSecond" }}
+
+{{ join (getvs "/rateLimiting/writeMethods/*") "," }}
+
 {{ getv "/ssl/bufferSize" }}
 
 {{ getv "/ssl/certificate" "" }}

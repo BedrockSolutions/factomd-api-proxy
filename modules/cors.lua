@@ -35,10 +35,7 @@ local function set_common_cors_headers(allow_origin, origin, response)
   end
 end
 
-local function handle_options(arg)
-  local allow_origin = arg.allow_origin
-  local response = arg.response
-
+local function handle_options(allow_origin, response)
   if is_cors_disabled(allow_origin) then
     set_response_error{response=response, code=codes.CORS_ERROR, message='CORS disabled', status=ngx.HTTP_NOT_FOUND}
     return
@@ -91,10 +88,7 @@ local function handle_options(arg)
   set_response_message{response=response, data=data, message='Origin is allowed'}
 end
 
-local function handle_get_and_post(arg)
-  local allow_origin = arg.allow_origin
-  local response = arg.response
-
+local function handle_get_and_post(allow_origin, response)
   if is_cors_disabled(allow_origin) then
     return
   end
@@ -114,9 +108,9 @@ return function(config, request, response)
   local allow_origin = config.allow_origin
 
   if request.is_cors_preflight then
-    handle_options{allow_origin=allow_origin, response=response}
+    handle_options(allow_origin, response)
 
   elseif request.is_health_check or request.is_api_call then
-    handle_get_and_post{allow_origin=allow_origin, response=response}
+    handle_get_and_post(allow_origin, response)
   end
 end

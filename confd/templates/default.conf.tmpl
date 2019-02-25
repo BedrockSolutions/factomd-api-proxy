@@ -1,4 +1,6 @@
 {{- $accessControlWhitelist := getvs "/accessControlWhitelist/*" -}}
+{{- $blockDuration := getv "/rateLimiting/blockDurationInSeconds" -}}
+{{- $burstWritesPerSecond := getv "/rateLimiting/burstWritesPerSecond" -}}
 {{- $clientBodyBufferSize := getv "/nginx/clientBodyBufferSize" -}}
 {{- $corsAllowOrigin := getv "/corsAllowOrigin" "" -}}
 {{- $factomdUrl := getv "/factomdUrl" -}}
@@ -10,6 +12,8 @@
 {{- $proxyBuffering := getv "/nginx/proxyBuffering" -}}
 {{- $proxyConnectTimeout := getv "/nginx/proxyConnectTimeout" -}}
 {{- $proxyRequestBuffering := getv "/nginx/proxyRequestBuffering" -}}
+{{- $maxWritesPerBlock := getv "/rateLimiting/maxWritesPerBlock" -}}
+{{- $maxWritesPerSecond := getv "/rateLimiting/maxWritesPerSecond" -}}
 {{- $sslBufferSize := getv "/ssl/bufferSize" -}}
 {{- $sslCertificate := getv "/ssl/certificate" "" -}}
 {{- $sslCiphers := getv "/ssl/ciphers" -}}
@@ -18,10 +22,13 @@
 {{- $sslSessionCacheSize := getv "/ssl/sessionCacheSize" -}}
 {{- $sslSessionTimeout := getv "/ssl/sessionTimeout" -}}
 {{- $sslTrustedCertificate := getv "/ssl/trustedCertificate" "" -}}
+{{- $writeMethods := getvs "/rateLimiting/writeMethods/*" -}}
 
 {{- $sslEnabled := and (gt (len $sslCertificate) 0) (gt (len $sslCertificateKey) 0) -}}
 {{- $defaultPort := or (and $sslEnabled 8443) 8080 -}}
 {{- $port := or $listenPort $defaultPort -}}
+
+lua_shared_dict rate_limit_store 1m;
 
 lua_package_path "$prefix/lua/?.lua;;";
 lua_code_cache on;
@@ -48,13 +55,23 @@ map $http_forwarded $proxy_add_forwarded {
 }
 
 init_by_lua_block {
-  local access_control_whitelist = {
-{{- range $accessControlWhitelist -}}
-    "{{ . }}",
-{{- end -}}
+  local config = {
+    access_control_whitelist = { {{- range $accessControlWhitelist -}}"{{ . }}",{{- end -}} },
+    allow_origin = '{{ replace $corsAllowOrigin "\\" "\\\\" -1 }}',
+    block_duration = tonumber({{  $blockDuration }}),
+    burst_writes_per_second = tonumber({{ $burstWritesPerSecond }}),
+    clock_spread_tolerance = tonumber({{ $healthCheckClockSpreadTolerance }}),
+    max_block_age = tonumber({{ $healthCheckMaxBlockAge }}),
+    max_writes_per_block = tonumber({{ $maxWritesPerBlock }}),
+    max_writes_per_second = tonumber({{ $maxWritesPerSecond }}),
+    ssl_enabled = {{ $sslEnabled }},
+    write_methods = { {{- range $writeMethods -}}"{{ . }}",{{- end -}} },
   }
 
-  require('access_control').init_whitelist(access_control_whitelist)
+  -- https://github.com/openresty/lua-resty-limit-traffic/issues/33
+  require("resty.core")
+
+  require("main").init(config)
 }
 
 server {
@@ -101,7 +118,7 @@ server {
         ssl_enabled = {{ $sslEnabled }}
       }
 
-      require('main')(config)
+      require('main').go(config)
     }
   }
 

@@ -6,6 +6,7 @@ local cors = require('cors')
 local health_check = require('health_check')
 local log = require('log')
 local parse_and_validate_request = require('parse_and_validate_request')
+local rate_limiting = require('rate_limiting')
 local is_response_error = require('shared').is_response_error
 
 local function global_headers(ssl_enabled, response)
@@ -60,7 +61,12 @@ local function send_response(response)
   ngx.exit(response.status)
 end
 
-return function(config)
+local function init(config)
+  access_control.init(config)
+  rate_limiting.init(config)
+end
+
+local function go(config)
   local request = init_request_object()
   local response = init_response_object()
 
@@ -78,7 +84,11 @@ return function(config)
         health_check(config, response)
 
       elseif request.is_api_call then
-        api_call(request, response)
+        rate_limiting.enforce_limits(request, response)
+
+        if not is_response_error(response) then
+          api_call(request, response)
+        end
       end
     end
   end
@@ -87,3 +97,8 @@ return function(config)
 
   send_response(response)
 end
+
+return {
+  init = init,
+  go = go,
+}

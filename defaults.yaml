@@ -37,6 +37,24 @@ nginx:
   # http://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_request_buffering
   proxyRequestBuffering: off
 
+rateLimiting:
+
+  blockDurationInSeconds: 600
+
+  burstWritesPerSecond: 10
+
+  maxWritesPerBlock: 600
+
+  maxWritesPerSecond: 2
+
+  writeMethods:
+  - commit-chain
+  - commit-entry
+  - factoid-submit
+  - reveal-chain
+  - reveal-entry
+  - send-raw-message
+
 ssl:
 
   # http://nginx.org/en/docs/http/ngx_http_ssl_module.html#ssl_buffer_size

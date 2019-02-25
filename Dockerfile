@@ -10,8 +10,8 @@ RUN set -xe && \
 
 WORKDIR /home/app
 
-ADD https://github.com/kelseyhightower/confd/releases/download/v0.16.0/confd-0.16.0-linux-amd64 /usr/local/bin/confd
-#COPY ./bin/confd /usr/local/bin/confd
+#ADD https://github.com/kelseyhightower/confd/releases/download/v0.16.0/confd-0.16.0-linux-amd64 /usr/local/bin/confd
+COPY ./bin/confd /usr/local/bin/confd
 
 COPY confd ./confd
 COPY modules ./modules
