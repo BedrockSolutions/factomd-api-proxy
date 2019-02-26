@@ -6,16 +6,14 @@ local codes = require('json_rpc_codes')
 local shared = require('shared')
 local set_response_error = shared.set_response_error
 
-local limiters
-local keys = {"req", "count"}
+local req_limiter, count_limiter
 local write_methods = {}
-
-local burst_writes_per_second, max_writes_per_second, max_writes_per_block, block_duration
+local max_burst_writes_per_second, max_writes_per_second, max_writes_per_block, block_duration
 
 local function init(config)
   ngx.shared.rate_limit_store:flush_all()
 
-  burst_writes_per_second = config.burst_writes_per_second
+  max_burst_writes_per_second = config.max_burst_writes_per_second
   max_writes_per_second = config.max_writes_per_second
   max_writes_per_block = config.max_writes_per_block
   block_duration = config.block_duration
@@ -24,78 +22,114 @@ local function init(config)
     write_methods[method] = true
   end
 
-  local req_limiter, err =
-    limit_req.new("rate_limit_store", max_writes_per_second, burst_writes_per_second - max_writes_per_second)
+  req_limiter, err =
+    limit_req.new('rate_limit_store', max_writes_per_second, max_burst_writes_per_second - max_writes_per_second)
 
   assert(req_limiter, err)
 
-  local count_limiter, err =
-    limit_count.new("rate_limit_store", max_writes_per_block, block_duration)
+  count_limiter, err =
+    limit_count.new('rate_limit_store', max_writes_per_block, block_duration)
 
   assert(count_limiter, err)
+end
 
-  limiters = { req_limiter, count_limiter }
+local function get_block_time_remaining()
+  return ngx.shared.rate_limit_store:ttl('count')
+end
+
+local function get_block_writes_remaining()
+  return math.max(ngx.shared.rate_limit_store:get('count'), 0)
+end
+
+local function get_block_reset_time()
+  return math.ceil(ngx.now() + get_block_time_remaining())
+end
+
+local function block_headers(response, delay, err_or_remaining)
+  response.headers['X-RateLimit-BlockDuration'] = block_duration
+  response.headers['X-RateLimit-BlockResetTime'] = get_block_reset_time()
+  response.headers['X-RateLimit-BlockWritesRemaining'] = get_block_writes_remaining()
+  response.headers['X-RateLimit-MaxWritesPerBlock'] = max_writes_per_block
+
+  if not delay and err_or_remaining == 'rejected' then
+    response.headers['Retry-After'] = math.ceil(get_block_time_remaining())
+  end
+end
+
+local function writes_per_second_headers(response, delay, err_or_excess)
+  response.headers['X-RateLimit-MaxBurstWritesPerSecond'] = max_burst_writes_per_second
+  response.headers['X-RateLimit-MaxWritesPerSecond'] = max_writes_per_second
+
+  if not delay and err_or_excess == 'rejected' then
+    response.headers['Retry-After'] = math.ceil(max_burst_writes_per_second / max_writes_per_second)
+  end
+
+  if delay and delay > 0.001 then
+      response.headers['X-RateLimit-WriteDelay'] = delay
+      response.headers['X-RateLimit-WritesPerSecond'] = max_writes_per_second + err_or_excess
+  end
+end
+
+local function error_data(req_delay, req_err_or_excess, count_delay, count_err_or_remaining)
+  local data = {
+    blockDuration = block_duration,
+    blockResetTime = get_block_reset_time(),
+    blockTimeRemaining = math.ceil(get_block_time_remaining()),
+    blockWritesRemaining = get_block_writes_remaining(),
+    maxBurstWritesPerSecond = max_burst_writes_per_second,
+    maxWritesPerBlock = max_writes_per_block,
+    maxWritesPerSecond = max_writes_per_second,
+  }
+
+  if req_delay and req_delay > 0.001 then
+    data.writeDelay = req_delay
+    data.writesPerSecond = max_writes_per_second + req_err_or_excess
+  end
+
+  return data
 end
 
 local function enforce_limits(request, response)
   local method = request.json_rpc.method
 
   if write_methods[method] then
-    local states = {}
+    local req_delay, req_err = req_limiter:incoming("req", true)
+    writes_per_second_headers(response, req_delay, req_err)
 
-    local delay, err = limit_traffic.combine(limiters, keys, states)
-    local block_time_remaining_raw = ngx.shared.rate_limit_store:ttl("count")
-    local block_time_remaining = math.ceil(block_time_remaining_raw)
-    local block_writes_remaining = math.max(ngx.shared.rate_limit_store:get("count"), -1)
-    local block_reset = math.ceil(ngx.now() + block_time_remaining_raw)
+    local count_delay, count_err
+    if req_delay then
+      count_delay, count_err = count_limiter:incoming("count", true)
+    end
+    block_headers(response, count_delay, count_err)
 
-    response.headers['X-RateLimit-BlockDuration'] = block_duration
-    response.headers['X-RateLimit-MaxWritesPerBlock'] = max_writes_per_block
-    response.headers['X-RateLimit-BlockWritesRemaining'] = block_writes_remaining
-    response.headers['X-RateLimit-BlockResetTime'] = block_reset
-
-    response.headers['X-RateLimit-MaxBurstWritesPerSecond'] = burst_writes_per_second
-    response.headers['X-RateLimit-MaxWritesPerSecond'] = max_writes_per_second
-
-    print("delay: ", delay, ", excess: ", states[1])
-
-    if not delay then
-      local message, status
-
-      local data = {
-        blockDuration = block_duration,
-        blockResetTime = block_reset,
-        blockWritesRemaining = block_writes_remaining,
-        maxBurstWritesPerSecond = burst_writes_per_second,
-        maxWritesPerBlock = max_writes_per_block,
-        maxWritesPerSecond = max_writes_per_second,
-      }
-
-      if err == 'rejected' then
-        status = ngx.HTTP_TOO_MANY_REQUESTS
-        if block_writes_remaining == -1 then
-          message = 'Block write quota exceeded'
-          response.headers['Retry-After'] = block_time_remaining
-          data.retryAfter = block_time_remaining
-        else
-          local retry_after = math.ceil(burst_writes_per_second / max_writes_per_second)
-
+    if not req_delay or (req_delay and not count_delay) then
+      local message
+      if not req_delay then
+        if req_err == 'rejected' then
           message = 'Max writes per second exceeded'
-          response.headers['Retry-After'] = retry_after
-          data.retryAfter = retry_after
+        else
+          message = req_err
         end
-
       else
-        message = err
+        if count_err == 'rejected' then
+          message = 'Block write quota exceeded'
+        else
+          message = count_err
+        end
+      end
+
+      local status
+      if req_err == 'rejected' or count_err == 'rejected' then
+        status = ngx.HTTP_TOO_MANY_REQUESTS
+      else
         status = ngx.HTTP_SERVICE_UNAVAILABLE
       end
 
-      set_response_error{response=response, code=codes.RATE_LIMIT_ERROR, data=data, message=message, status=status}
+      local data = error_data(req_delay, req_err, count_delay, count_err)
+      set_response_error{response=response, code=codes.RATE_LIMIT_ERROR, data=data, message=message, status=status }
 
-    elseif delay > 0.001 then
-      response.headers['X-RateLimit-WriteDelay'] = delay
-      response.headers['X-RateLimit-WritesPerSecond'] = max_writes_per_second + states[1]
-      ngx.sleep(delay)
+    elseif req_delay > 0.001 then
+      ngx.sleep(req_delay)
     end
   end
 end
