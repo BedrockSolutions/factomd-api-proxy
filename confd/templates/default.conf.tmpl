@@ -1,6 +1,5 @@
 {{- $accessControlWhitelist := getvs "/accessControlWhitelist/*" -}}
 {{- $blockDuration := getv "/rateLimiting/blockDurationInSeconds" -}}
-{{- $maxBurstWritesPerSecond := getv "/rateLimiting/maxBurstWritesPerSecond" -}}
 {{- $clientBodyBufferSize := getv "/nginx/clientBodyBufferSize" -}}
 {{- $corsAllowOrigin := getv "/corsAllowOrigin" "" -}}
 {{- $factomdUrl := getv "/factomdUrl" -}}
@@ -9,15 +8,16 @@
 {{- $keepAliveRequests := getv "/nginx/keepAliveRequests" -}}
 {{- $keepAliveTimeout := getv "/nginx/keepAliveTimeout" -}}
 {{- $listenPort := getv "/listenPort" "" -}}
-{{- $responseBuffering := getv "/nginx/responseBuffering" -}}
-{{- $proxyConnectTimeout := getv "/nginx/proxyConnectTimeout" -}}
-{{- $requestBuffering := getv "/nginx/requestBuffering" -}}
+{{- $maxBurstWritesPerSecond := getv "/rateLimiting/maxBurstWritesPerSecond" -}}
 {{- $maxWritesPerBlock := getv "/rateLimiting/maxWritesPerBlock" -}}
 {{- $maxWritesPerSecond := getv "/rateLimiting/maxWritesPerSecond" -}}
+{{- $proxyConnectTimeout := getv "/nginx/proxyConnectTimeout" -}}
+{{- $requestBuffering := getv "/nginx/requestBuffering" -}}
+{{- $responseBuffering := getv "/nginx/responseBuffering" -}}
 {{- $sslBufferSize := getv "/ssl/bufferSize" -}}
 {{- $sslCertificate := getv "/ssl/certificate" "" -}}
-{{- $sslCiphers := getv "/ssl/ciphers" -}}
 {{- $sslCertificateKey := getv "/ssl/certificateKey" "" -}}
+{{- $sslCiphers := getv "/ssl/ciphers" -}}
 {{- $sslProtocols := getv "/ssl/protocols" -}}
 {{- $sslSessionCacheSize := getv "/ssl/sessionCacheSize" -}}
 {{- $sslSessionTimeout := getv "/ssl/sessionTimeout" -}}
