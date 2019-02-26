@@ -4,9 +4,9 @@ local set_response_error = require('shared').set_response_error
 
 local whitelist
 
-local function init_whitelist(whitelist_ips)
+local function init(config)
   ip_utils.enable_lrucache()
-  whitelist = ip_utils.parse_cidrs(whitelist_ips)
+  whitelist = ip_utils.parse_cidrs(config.access_control_whitelist)
 end
 
 local function check_access(request, response)
@@ -19,6 +19,6 @@ local function check_access(request, response)
 end
 
 return {
-  init_whitelist = init_whitelist,
+  init = init,
   check_access = check_access,
 }

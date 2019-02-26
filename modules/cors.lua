@@ -4,16 +4,18 @@ local get_header = shared.get_header
 local set_response_error = shared.set_response_error
 local set_response_message = shared.set_response_message
 
-local function is_wildcard_origin(allow_origin)
+local allow_origin
+
+local function is_wildcard_origin()
   return allow_origin == '*'
 end
 
-local function is_cors_disabled(allow_origin)
+local function is_cors_disabled()
   return not allow_origin or allow_origin == ''
 end
 
-local function is_origin_allowed(allow_origin, origin)
-  if is_wildcard_origin(allow_origin) then
+local function is_origin_allowed(origin)
+  if is_wildcard_origin() then
     return true
   end
 
@@ -24,8 +26,8 @@ local function is_origin_allowed(allow_origin, origin)
   end
 end
 
-local function set_common_cors_headers(allow_origin, origin, response)
-  if is_wildcard_origin(allow_origin) then
+local function set_common_cors_headers(origin, response)
+  if is_wildcard_origin() then
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Credentials'] = 'false'
   else
@@ -35,11 +37,8 @@ local function set_common_cors_headers(allow_origin, origin, response)
   end
 end
 
-local function handle_options(arg)
-  local allow_origin = arg.allow_origin
-  local response = arg.response
-
-  if is_cors_disabled(allow_origin) then
+local function handle_options(response)
+  if is_cors_disabled() then
     set_response_error{response=response, code=codes.CORS_ERROR, message='CORS disabled', status=ngx.HTTP_NOT_FOUND}
     return
   end
@@ -78,24 +77,21 @@ local function handle_options(arg)
     return
   end
 
-  if not is_origin_allowed(allow_origin, origin) then
+  if not is_origin_allowed(origin) then
     local data = { origin = origin }
     set_response_error{response=response, data=data, message='Origin is not allowed', status=ngx.HTTP_OK}
     return
   end
 
-  set_common_cors_headers(allow_origin, origin, response)
+  set_common_cors_headers(origin, response)
   response.headers['Access-Control-Allow-Headers'] = get_header('Access-Control-Request-Headers')
 
   local data = { requestMethod = req_method, origin = origin }
   set_response_message{response=response, data=data, message='Origin is allowed'}
 end
 
-local function handle_get_and_post(arg)
-  local allow_origin = arg.allow_origin
-  local response = arg.response
-
-  if is_cors_disabled(allow_origin) then
+local function handle_get_and_post(response)
+  if is_cors_disabled() then
     return
   end
 
@@ -105,18 +101,25 @@ local function handle_get_and_post(arg)
     return
   end
 
-  if is_origin_allowed(allow_origin, origin) then
-    set_common_cors_headers(allow_origin, origin, response)
+  if is_origin_allowed(origin) then
+    set_common_cors_headers(origin, response)
   end
 end
 
-return function(config, request, response)
-  local allow_origin = config.allow_origin
+local function init(config)
+  allow_origin = config.allow_origin
+end
 
+local function add_cors_headers(request, response)
   if request.is_cors_preflight then
-    handle_options{allow_origin=allow_origin, response=response}
+    handle_options(response)
 
   elseif request.is_health_check or request.is_api_call then
-    handle_get_and_post{allow_origin=allow_origin, response=response}
+    handle_get_and_post(response)
   end
 end
+
+return {
+  init = init,
+  add_cors_headers = add_cors_headers,
+}

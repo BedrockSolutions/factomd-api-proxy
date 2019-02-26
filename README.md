@@ -10,6 +10,9 @@ allowed origins.
 * **SSL support:** High-grade SSL configuration that can deliver an A+ SSL Labs rating,
 given a strong cert/key pair.
 
+* **Rate limiting:** Writes-per-second and writes-per-block rate limiting. Includes burst
+throttling, which spreads groups of writes over a longer period.
+
 * **Health check support:** The `GET /` endpoint performs tests on the underlying factomd 
 instance and returns a detailed diagnostic payload. This allows the API to work correctly 
 with cloud provider load balancers, and streamlines the development of monitoring
@@ -31,11 +34,54 @@ perfectly with Kubernetes configuration patterns. Painlessly store most of the c
 in one or more ConfigMaps, while storing sensitive data such as the SSL private key in a 
 Secret. No impedance mismatch!
 
-## Supported tags and Dockerfile links
+## Supported Tags and Dockerfile Links
 
 * [`latest` (*Dockerfile*)](https://github.com/BedrockSolutions/factomd-api-proxy/blob/master/Dockerfile)
   
-* [`0.4.0` (*Dockerfile*)](https://github.com/BedrockSolutions/factomd-api-proxy/blob/0.4.0/Dockerfile)
+* [`0.5.0` (*Dockerfile*)](https://github.com/BedrockSolutions/factomd-api-proxy/blob/0.5.0/Dockerfile)
+
+## In-depth Feature Discussion
+
+### Rate Limiting
+
+The rate limiting subsystem can limit writes-per-second and writes-per-block. Default configuration
+enables both modes with sensible defaults.
+
+#### Writes-per-second limiting
+
+WPS limiting helps control bursts of write activity on the network.
+Two settings control WPS limiting: `rateLimiting.maxWritesPerSecond` and 
+`rateLimiting.maxBurstWritesPerSecond`. Together, these two settings create three rate 
+limiting regions:
+
+```
+0 |--- A ---| maxWritesPerSecond |--- B ---| maxBurstWritesPerSecond |--- C --->
+```
+In region "A" the WPS is below the `maxWritesPerSecond` value. All write requests sent
+to the proxy will be immediately sent to the upstream factomd.
+
+In region "B" the WPS is between the `maxWritesPerSecond` and `maxBurstWritesPerSecond`
+values. Write requests will be sent to the upstream factomd at the `maxWritesPerSecond`
+rate. Requests will be delayed by the proxy by some amount so that the writes are
+spread over a longer time period.
+
+In region "C" the WPS is greater than the `maxBurstWritesPerSecond` value. Write requests 
+will be sent to the upstream factomd at the `maxWritesPerSecond` rate. Some requests
+will be delayed by the proxy as in region "B". Other requests will be immediately
+rejected with an HTTP 429 error.
+
+#### Writes-per-block limiting
+
+WPB limiting helps keep the number of writes in a given block within more reasonable
+limits.
+Two settings control WPB limiting: `rateLimiting.blockDurationInSeconds` and
+`rateLimiting.maxWritesPerBlock`. 
+
+> In WPB limiting, the concept of a block is simply a duration. It does not actually 
+line up with the beginning and end of a block on the blockchain.
+
+WPB limiting sets the maximum number of writes allowed over a set interval. If the 
+write quota is exceeded, the request will be rejected with an HTTP 429 error.
 
 ## Configuration
 
@@ -65,8 +111,10 @@ container is running.**
 
 ### Example
 
-Factomd is being deployed multiple times. There is configuration common to all deployments, as
-well as configuration specific to a given deployment.
+In this example, configuration has been split between two files. The `common.yaml` file holds
+configuration common to all proxy instances being deployed. The `local.yaml` file holds 
+configuration specific to a given proxy instance. To bootstrap a given proxy instance, both
+files are needed.
 
 First, create a configuration directory:
 ```bash
@@ -80,7 +128,7 @@ accessControlWhitelist:
 - 1.2.3.0/24
 - 10.20.0.0/16
 
-corsAllowOrigin: "^https://my\\.domain\\.com$"
+corsAllowOrigin: "^https://my\.domain\.com$"
 
 factomdUrl: http://localhost:8080
 
@@ -123,10 +171,10 @@ Forth, start the container:
 ```bash
 docker run -d -p 443:8443 --name proxy \
   -v /path/to/proxy_config:/home/app/values \
-  bedrocksolutions/factomd-api-proxy:0.4.0
+  bedrocksolutions/factomd-api-proxy:0.5.0
 ```
 
-### Primary options
+## Primary options
 
 * **`accessControlWhitelist`:** An array of allowed IP addresses and IP networks in CIDR format. If
 omitted, all addresses are allowed to connect. Example:
@@ -165,6 +213,19 @@ to `http://courtesy-node.factom.com`.
 * **`listenPort`:** The port the proxy will listen on. Defaults to `8080` for non-SSL operation,
 and `8443` when SSL is enabled.
 
+* **`rateLimiting.blockDurationInSeconds`:** The duration of a rate-limiting block.
+Defaults to 600.
+
+* **`rateLimiting.maxBurstWritesPerSecond`:** The maximum writes-per-second that will be buffered
+before requests are rejected. Defaults to 10.
+
+* **`rateLimiting.maxWritesPerBlock`:** The maximum number of writes that can be sent during a 
+rate-limiting block. A block is simply a period of time, and does not actually correspond to 
+a Factom block. Defaults to 600.
+
+* **`rateLimiting.maxWritesPerSecond`:** The maximum writes-per-second that will be sent to the
+upstream factomd instance. Defaults to 2.
+
 * **`ssl.certificate`:** Certificate chain in PEM format. If this plus `ssl.certificateKey` are 
 present, SSL will be enabled. Although it is possible specify just the server certificate here, 
 normally the entire chain of certificates should be specified, starting with the server certificate, 
@@ -174,7 +235,10 @@ All of these certificates will be sent to the client.
 * **`ssl.certificateKey`:** Private key in PEM format. If this plus `ssl.certificate` are present,
 SSL will be enabled.
  
-### Secondary options
+* **`ssl.trustedCertificate`:**  Certificate chain of intermediate and root certificates,
+in PEM format. Used to verify OCSP Stapling.
+
+## Secondary options
 
 * **`nginx.clientBodyBufferSize`:** Specifies the size and the max size of the client
 request buffer. The default should be plenty generous for the vast majority of API
@@ -189,14 +253,17 @@ behind cloud load balancers.
 connection will stay open on the server side. The default value is tuned so that 
 the proxy will work correctly behind cloud load balancers.
 
-* **`nginx.proxyBuffering`:** Toggles buffering of response data sent from an upstream factomd
-to the proxy.
-
 * **`nginx.proxyConnectTimeout`:** Sets the timeout for connections to the upstream
 factomd instance.
 
-* **`nginx.proxyRequestBuffering`:** Toggles buffering of request data sent from the client
+* **`nginx.requestBuffering`:** Toggles buffering of request data sent from the client
+to the upstream factomd.
+
+* **`nginx.responseBuffering`:** Toggles buffering of response data sent from an upstream factomd
 to the proxy.
+
+* **`rateLimiting.writeMethods`:** Array of JSON-RPC methods that will be considered writes
+by the rate-limiting subsystem.
 
 * **`ssl.ciphers`:** Specifies the enabled SSL ciphers. The ciphers are specified in the 
 format understood by the OpenSSL library. The full list can be viewed by issuing the 
@@ -204,11 +271,6 @@ format understood by the OpenSSL library. The full list can be viewed by issuing
 security.
 
 * **`ssl.dhParam`:** Specifies the Diffie-Hellman key exchange parameters in PEM format.
-
-* **`ssl.trustedCertificate`:**  Certificate data in PEM format used to verify OCSP Stapling.
-Normally, the entire chain of certificates is specified in `ssl.certificate` and this option 
-is not needed. If sending the root certificate to the client is not desired, then it can be
-specified here instead.
 
 ## Examples
 

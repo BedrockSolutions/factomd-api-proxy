@@ -16,11 +16,21 @@
 
 {{ getv "/nginx/keepAliveTimeout" }}
 
-{{ getv "/nginx/proxyBuffering" }}
+{{ getv "/nginx/responseBuffering" }}
 
 {{ getv "/nginx/proxyConnectTimeout" }}
 
-{{ getv "/nginx/proxyRequestBuffering" }}
+{{ getv "/nginx/requestBuffering" }}
+
+{{ getv "/rateLimiting/blockDurationInSeconds" }}
+
+{{ getv "/rateLimiting/maxBurstWritesPerSecond" }}
+
+{{ getv "/rateLimiting/maxWritesPerBlock" }}
+
+{{ getv "/rateLimiting/maxWritesPerSecond" }}
+
+{{ join (getvs "/rateLimiting/writeMethods/*") "," }}
 
 {{ getv "/ssl/bufferSize" }}
 

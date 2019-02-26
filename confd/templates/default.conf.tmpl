@@ -1,4 +1,5 @@
 {{- $accessControlWhitelist := getvs "/accessControlWhitelist/*" -}}
+{{- $blockDuration := getv "/rateLimiting/blockDurationInSeconds" -}}
 {{- $clientBodyBufferSize := getv "/nginx/clientBodyBufferSize" -}}
 {{- $corsAllowOrigin := getv "/corsAllowOrigin" "" -}}
 {{- $factomdUrl := getv "/factomdUrl" -}}
@@ -7,21 +8,27 @@
 {{- $keepAliveRequests := getv "/nginx/keepAliveRequests" -}}
 {{- $keepAliveTimeout := getv "/nginx/keepAliveTimeout" -}}
 {{- $listenPort := getv "/listenPort" "" -}}
-{{- $proxyBuffering := getv "/nginx/proxyBuffering" -}}
+{{- $maxBurstWritesPerSecond := getv "/rateLimiting/maxBurstWritesPerSecond" -}}
+{{- $maxWritesPerBlock := getv "/rateLimiting/maxWritesPerBlock" -}}
+{{- $maxWritesPerSecond := getv "/rateLimiting/maxWritesPerSecond" -}}
 {{- $proxyConnectTimeout := getv "/nginx/proxyConnectTimeout" -}}
-{{- $proxyRequestBuffering := getv "/nginx/proxyRequestBuffering" -}}
+{{- $requestBuffering := getv "/nginx/requestBuffering" -}}
+{{- $responseBuffering := getv "/nginx/responseBuffering" -}}
 {{- $sslBufferSize := getv "/ssl/bufferSize" -}}
 {{- $sslCertificate := getv "/ssl/certificate" "" -}}
-{{- $sslCiphers := getv "/ssl/ciphers" -}}
 {{- $sslCertificateKey := getv "/ssl/certificateKey" "" -}}
+{{- $sslCiphers := getv "/ssl/ciphers" -}}
 {{- $sslProtocols := getv "/ssl/protocols" -}}
 {{- $sslSessionCacheSize := getv "/ssl/sessionCacheSize" -}}
 {{- $sslSessionTimeout := getv "/ssl/sessionTimeout" -}}
 {{- $sslTrustedCertificate := getv "/ssl/trustedCertificate" "" -}}
+{{- $writeMethods := getvs "/rateLimiting/writeMethods/*" -}}
 
 {{- $sslEnabled := and (gt (len $sslCertificate) 0) (gt (len $sslCertificateKey) 0) -}}
 {{- $defaultPort := or (and $sslEnabled 8443) 8080 -}}
 {{- $port := or $listenPort $defaultPort -}}
+
+lua_shared_dict rate_limit_store 1m;
 
 lua_package_path "$prefix/lua/?.lua;;";
 lua_code_cache on;
@@ -48,13 +55,23 @@ map $http_forwarded $proxy_add_forwarded {
 }
 
 init_by_lua_block {
-  local access_control_whitelist = {
-{{- range $accessControlWhitelist -}}
-    "{{ . }}",
-{{- end -}}
+  local config = {
+    access_control_whitelist = { {{- range $accessControlWhitelist -}}"{{ . }}",{{- end -}} },
+    allow_origin = '{{ replace $corsAllowOrigin "\\" "\\\\" -1 }}',
+    block_duration = tonumber({{  $blockDuration }}),
+    clock_spread_tolerance = tonumber({{ $healthCheckClockSpreadTolerance }}),
+    max_block_age = tonumber({{ $healthCheckMaxBlockAge }}),
+    max_burst_writes_per_second = tonumber({{ $maxBurstWritesPerSecond }}),
+    max_writes_per_block = tonumber({{ $maxWritesPerBlock }}),
+    max_writes_per_second = tonumber({{ $maxWritesPerSecond }}),
+    ssl_enabled = {{ $sslEnabled }},
+    write_methods = { {{- range $writeMethods -}}"{{ . }}",{{- end -}} },
   }
 
-  require('access_control').init_whitelist(access_control_whitelist)
+  -- https://github.com/openresty/lua-resty-limit-traffic/issues/33
+  require("resty.core")
+
+  require("main").init(config)
 }
 
 server {
@@ -94,23 +111,16 @@ server {
 
   location / {
     rewrite_by_lua_block {
-      local config = {
-        allow_origin = '{{ replace $corsAllowOrigin "\\" "\\\\" -1 }}',
-        clock_spread_tolerance = tonumber({{ $healthCheckClockSpreadTolerance }}),
-        max_block_age = tonumber({{ $healthCheckMaxBlockAge }}),
-        ssl_enabled = {{ $sslEnabled }}
-      }
-
-      require('main')(config)
+      require('main').go()
     }
   }
 
   location = /factomd {
     internal;
 
-    proxy_buffering {{ if eq $proxyBuffering "on" }}on{{ else }}off{{ end }};
+    proxy_buffering {{ if eq $responseBuffering "on" }}on{{ else }}off{{ end }};
     proxy_connect_timeout {{ $proxyConnectTimeout }};
-    proxy_request_buffering {{ if eq $proxyRequestBuffering "on" }}on{{ else }}off{{ end }};
+    proxy_request_buffering {{ if eq $requestBuffering "on" }}on{{ else }}off{{ end }};
     proxy_set_header Forwarded $proxy_add_forwarded;
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
