@@ -102,7 +102,7 @@ local function enforce_limits(request, response)
     end
     block_headers(response, count_delay, count_err)
 
-    if not req_delay or (req_delay and not count_delay) then
+    if not (req_delay and count_delay) then
       local message
       if not req_delay then
         if req_err == 'rejected' then
