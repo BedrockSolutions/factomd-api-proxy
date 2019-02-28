@@ -10,6 +10,7 @@ keys = [
   "/healthCheck/clockSpreadToleranceInSeconds",
   "/healthCheck/maxBlockAgeInSeconds",
   "/listenPort",
+  "/name",
   "/nginx/clientBodyBufferSize",
   "/nginx/keepAliveRequests",
   "/nginx/keepAliveTimeout",
@@ -30,4 +31,5 @@ keys = [
   "/ssl/sessionCacheSize",
   "/ssl/sessionTimeout",
   "/ssl/trustedCertificate",
+  "/version",
 ]
