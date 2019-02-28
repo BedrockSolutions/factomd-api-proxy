@@ -11,6 +11,7 @@
 {{- $maxBurstWritesPerSecond := getv "/rateLimiting/maxBurstWritesPerSecond" -}}
 {{- $maxWritesPerBlock := getv "/rateLimiting/maxWritesPerBlock" -}}
 {{- $maxWritesPerSecond := getv "/rateLimiting/maxWritesPerSecond" -}}
+{{- $name := getv "/name" -}}
 {{- $proxyConnectTimeout := getv "/nginx/proxyConnectTimeout" -}}
 {{- $requestBuffering := getv "/nginx/requestBuffering" -}}
 {{- $responseBuffering := getv "/nginx/responseBuffering" -}}
@@ -22,6 +23,7 @@
 {{- $sslSessionCacheSize := getv "/ssl/sessionCacheSize" -}}
 {{- $sslSessionTimeout := getv "/ssl/sessionTimeout" -}}
 {{- $sslTrustedCertificate := getv "/ssl/trustedCertificate" "" -}}
+{{- $version := getv "/version" -}}
 {{- $writeMethods := getvs "/rateLimiting/writeMethods/*" -}}
 
 {{- $sslEnabled := and (gt (len $sslCertificate) 0) (gt (len $sslCertificateKey) 0) -}}
@@ -64,7 +66,9 @@ init_by_lua_block {
     max_burst_writes_per_second = tonumber({{ $maxBurstWritesPerSecond }}),
     max_writes_per_block = tonumber({{ $maxWritesPerBlock }}),
     max_writes_per_second = tonumber({{ $maxWritesPerSecond }}),
+    name = '{{ $name }}',
     ssl_enabled = {{ $sslEnabled }},
+    version = '{{ $version }}',
     write_methods = { {{- range $writeMethods -}}"{{ . }}",{{- end -}} },
   }
 

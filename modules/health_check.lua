@@ -6,7 +6,14 @@ local shared = require('shared')
 local is_status_ok = shared.is_status_ok
 local set_response_error = shared.set_response_error
 
-local clock_spread_tolerance, max_block_age
+local clock_spread_tolerance, max_block_age, name, version
+
+local function init(config)
+  clock_spread_tolerance = config.clock_spread_tolerance
+  max_block_age = config.max_block_age
+  name = config.name
+  version = config.version
+end
 
 local function factomd_api_call(method)
   local json_rpc = {
@@ -31,9 +38,10 @@ local function get_response_data(res)
   return cjson.decode(res.body).result
 end
 
-local function create_data_object(heights_res, current_minute_res)
+local function create_data_object(heights_res, current_minute_res, properties_res)
   local heights_data = get_response_data(heights_res)
   local current_minute_data = get_response_data(current_minute_res)
+  local properties_data = get_response_data(properties_res)
 
   local data = {
     isHealthy = false,
@@ -57,6 +65,12 @@ local function create_data_object(heights_res, current_minute_res)
       entryBlock = heights_data.entryblockheight,
       leader = heights_data.leaderheight,
     },
+    system = {
+      proxyName = name,
+      proxyVersion = version,
+      factomdVersion = properties_data.factomdversion,
+      factomdApiVersion = properties_data.factomdapiversion,
+    }
   }
 
   data.flags.isSynced = data.heights.leader <= data.heights.directoryBlock + 1 and data.heights.leader <= data.heights.entry + 1
@@ -81,11 +95,6 @@ local function create_data_object(heights_res, current_minute_res)
   return data
 end
 
-local function init(config)
-  clock_spread_tolerance = config.clock_spread_tolerance
-  max_block_age = config.max_block_age
-end
-
 local function perform_check(response)
   local heights_res = factomd_api_call('heights')
 
@@ -103,7 +112,15 @@ local function perform_check(response)
     return
   end
 
-  local data = create_data_object(heights_res, current_minute_res)
+  local properties_res = factomd_api_call('properties')
+
+  if not is_status_ok(properties_res.status) then
+    local data = { heightsResponse = heights_res, currentMinuteResponse = current_minute_res, propertiesResponse = properties_res }
+    set_response_error{response=response, code=codes.HEALTH_CHECK_ERROR, data=data, message='Error getting properties', status=ngx.HTTP_SERVICE_UNAVAILABLE}
+    return
+  end
+
+  local data = create_data_object(heights_res, current_minute_res, properties_res)
 
   local message
 
