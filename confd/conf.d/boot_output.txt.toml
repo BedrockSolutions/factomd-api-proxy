@@ -1,0 +1,14 @@
+[template]
+src = "boot_output.txt.tmpl"
+dest = "/home/app/boot_output.txt"
+owner = "app"
+mode = "0644"
+keys = [
+  "/corsAllowOrigin",
+  "/factomdUrl",
+  "/listenPort",
+  "/name",
+  "/ssl/certificate",
+  "/ssl/certificateKey",
+  "/version",
+]

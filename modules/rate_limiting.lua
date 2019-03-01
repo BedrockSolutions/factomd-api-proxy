@@ -11,6 +11,8 @@ local write_methods = {}
 local max_burst_writes_per_second, max_writes_per_second, max_writes_per_block, block_duration
 
 local function init(config)
+  require("resty.core")
+
   ngx.shared.rate_limit_store:flush_all()
 
   max_burst_writes_per_second = config.max_burst_writes_per_second
