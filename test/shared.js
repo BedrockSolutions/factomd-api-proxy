@@ -306,6 +306,24 @@ const healthCheckDataSchema = {
         },
       },
     },
+    system: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        factomdVersion: {
+          type: 'string',
+        },
+        factomdApiVersion: {
+          type: 'string',
+        },
+        proxyName: {
+          type: 'string',
+        },
+        proxyVersion: {
+          type: 'string',
+        },
+      },
+    },
   },
   required: [
     'clocks',
@@ -314,6 +332,7 @@ const healthCheckDataSchema = {
     'flags',
     'heights',
     'isHealthy',
+    'system',
   ],
 };
 
