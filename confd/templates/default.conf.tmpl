@@ -30,10 +30,12 @@
 {{- $defaultPort := or (and $sslEnabled 8443) 8080 -}}
 {{- $port := or $listenPort $defaultPort -}}
 
-lua_shared_dict rate_limit_store 1m;
-
+access_log off;
+error_log stderr info;
 lua_package_path "$prefix/lua/?.lua;;";
 lua_code_cache on;
+
+lua_shared_dict rate_limit_store 1m;
 
 # Forwarded header support
 map $remote_addr $proxy_forwarded_elem {
@@ -72,18 +74,12 @@ init_by_lua_block {
     write_methods = { {{- range $writeMethods -}}"{{ . }}",{{- end -}} },
   }
 
-  -- https://github.com/openresty/lua-resty-limit-traffic/issues/33
-  require("resty.core")
-
   require("main").init(config)
 }
 
 server {
   listen {{ $port }}{{ or (and $sslEnabled " ssl") "" }} default_server;
   server_name localhost;
-
-  access_log off;
-  error_log stderr info;
 
   # Prevents the request body from being written to a temp file
   client_body_in_single_buffer on;

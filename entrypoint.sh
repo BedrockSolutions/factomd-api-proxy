@@ -2,6 +2,8 @@
 
 confd -onetime -sync-only -config-file "/home/app/confd/confd.toml"
 
+cat ~/boot_output.txt
+
 {
   while true; do
     inotifywait -m ~/values -e create -e modify -e delete -e move -r |

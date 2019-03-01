@@ -1,0 +1,23 @@
+{{- $corsAllowOrigin := getv "/corsAllowOrigin" "" -}}
+{{- $factomdUrl := getv "/factomdUrl" -}}
+{{- $listenPort := getv "/listenPort" "" -}}
+{{- $name := getv "/name" -}}
+{{- $sslCertificate := getv "/ssl/certificate" "" -}}
+{{- $sslCertificateKey := getv "/ssl/certificateKey" "" -}}
+{{- $version := getv "/version" -}}
+
+{{- $sslEnabled := and (gt (len $sslCertificate) 0) (gt (len $sslCertificateKey) 0) -}}
+{{- $defaultPort := or (and $sslEnabled 8443) 8080 -}}
+{{- $port := or $listenPort $defaultPort }}
+//////////////////////////////////////////
+//// -----------------
+//// Factomd API Proxy {{ $version }}
+//// -----------------
+//// name: {{ $name }}
+//// factomd URL: {{ $factomdUrl }}
+//// container port: {{ $port }}
+//// CORS allowed origin: {{ $corsAllowOrigin }}
+//// SSL enabled: {{ $sslEnabled }}
+//// -----------------
+//////////////////////////////////////////
+
