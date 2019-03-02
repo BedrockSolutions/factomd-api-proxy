@@ -9,7 +9,18 @@ local parse_and_validate_request = require('parse_and_validate_request')
 local rate_limiting = require('rate_limiting')
 local is_response_error = require('shared').is_response_error
 
-local ssl_enabled
+local name, ssl_enabled, version
+
+local function init(config)
+  name = config.name
+  ssl_enabled = config.ssl_enabled
+  version = config.version
+
+  access_control.init(config)
+  cors.init(config)
+  health_check.init(config)
+  rate_limiting.init(config)
+end
 
 local function global_headers(response)
   response.headers['Content-Security-Policy'] = "default-src 'none'"
@@ -22,6 +33,9 @@ local function global_headers(response)
   if ssl_enabled then
     response.headers['Strict-Transport-Security'] = 'max-age=63072000;'
   end
+
+  response.headers['X-FactomdApiProxy-Name'] = name
+  response.headers['X-FactomdApiProxy-Version'] = version
 end
 
 local function init_request_object()
@@ -61,15 +75,6 @@ local function send_response(response)
 
   ngx.print(response_json)
   ngx.exit(response.status)
-end
-
-local function init(config)
-  ssl_enabled = config.ssl_enabled
-
-  access_control.init(config)
-  cors.init(config)
-  health_check.init(config)
-  rate_limiting.init(config)
 end
 
 local function go()

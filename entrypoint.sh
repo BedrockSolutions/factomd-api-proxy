@@ -11,6 +11,7 @@ cat ~/boot_output.txt
         if [[ ${file} =~ .*\.yaml$ ]]; then
           echo "inotifywait: ${action} event on ${path}${file}"
           confd -onetime -config-file "/home/app/confd/confd.toml"
+          cat ~/boot_output.txt
         fi
       done
   done
