@@ -9,10 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - This changelog.
 - Writes-per-second and writes-per-block rate limiting.
 - Options to control request and response buffering.
+- Response headers with proxy name and version.
 
 ### Changed
 - Documentation.
 - Internal initialization flow.
+- Health check response payload contains additional info.
 
 ### Removed
 
