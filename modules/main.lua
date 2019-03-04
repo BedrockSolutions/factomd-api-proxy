@@ -34,8 +34,8 @@ local function global_headers(response)
     response.headers['Strict-Transport-Security'] = 'max-age=63072000;'
   end
 
-  response.headers['X-FactomdApiProxy-Name'] = name
-  response.headers['X-FactomdApiProxy-Version'] = version
+  response.headers['X-Factomd-Proxy-Name'] = name
+  response.headers['X-Factomd-Proxy-Version'] = version
 end
 
 local function init_request_object()
