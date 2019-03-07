@@ -2,6 +2,8 @@ local cjson = require('cjson')
 local codes = require('json_rpc_codes')
 local set_response_error = require('shared').set_response_error
 
+cjson.decode_array_with_array_mt(true)
+ 
 return function(request, response)
   local options = {
     body = request.body,
