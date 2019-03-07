@@ -891,7 +891,7 @@
 					"  console.log('testLibJs found in globals');",
 					"  eval(pm.globals.get(\"factomd-api-proxy-js\"));",
 					"} else {",
-					"  var url = \"https://raw.githubusercontent.com/BedrockSolutions/factomd-api-proxy/0.5.0-rc1/test/shared.js\";",
+					"  var url = \"https://raw.githubusercontent.com/BedrockSolutions/factomd-api-proxy/0.5.1/test/shared.js\";",
 					"  console.log(\"testing lib not found. loading from \" + url);",
 					"  pm.sendRequest(url, (err, res) => {",
 					"    eval(res.text());",
