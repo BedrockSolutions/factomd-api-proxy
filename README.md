@@ -38,7 +38,7 @@ Secret. No impedance mismatch!
 
 * [`latest` (*Dockerfile*)](https://github.com/BedrockSolutions/factomd-api-proxy/blob/master/Dockerfile)
   
-* [`0.5.1` (*Dockerfile*)](https://github.com/BedrockSolutions/factomd-api-proxy/blob/0.5.1/Dockerfile)
+* [`0.5.2` (*Dockerfile*)](https://github.com/BedrockSolutions/factomd-api-proxy/blob/0.5.2/Dockerfile)
 
 ## In-depth Feature Discussion
 
@@ -171,7 +171,7 @@ Forth, start the container:
 ```bash
 docker run -d -p 443:8443 --name proxy \
   -v /path/to/proxy_config:/home/app/values \
-  bedrocksolutions/factomd-api-proxy:0.5.1
+  bedrocksolutions/factomd-api-proxy:0.5.2
 ```
 
 ## Primary options
