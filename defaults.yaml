@@ -45,9 +45,9 @@ rateLimiting:
 
   maxBurstWritesPerSecond: 10
 
-  maxWritesPerBlock: 600
+  maxWritesPerBlock: 1200
 
-  maxWritesPerSecond: 2
+  maxWritesPerSecond: 3
 
   writeMethods:
   - commit-chain
