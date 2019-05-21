@@ -26,7 +26,6 @@ local function global_headers(response)
   response.headers['Content-Security-Policy'] = "default-src 'none'"
   response.headers['Content-Type'] = 'application/json; charset=utf-8'
   response.headers['Referrer-Policy'] = 'same-origin'
-  response.headers['X-Content-Type-Options'] = 'nosniff'
   response.headers['X-Frame-Options'] = 'SAMEORIGIN'
   response.headers['X-XSS-Protection'] = '1; mode=block'
 
