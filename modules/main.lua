@@ -58,13 +58,19 @@ local function init_response_object()
       error = nil,
       result = nil,
     },
+    raw_json_payload = nil,
   }
 end
 
 local function send_response(response)
   ngx.status = response.status or 520 -- Unknown error
 
-  local response_json = cjson.encode(response.json_rpc)
+  local response_json
+  if response.raw_json_payload == nil then
+    response_json = cjson.encode(response.json_rpc)
+  else
+    response_json = response.raw_json_payload
+  end
 
   ngx.header['Content-Length'] = string.len(response_json)
 

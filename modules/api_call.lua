@@ -31,6 +31,7 @@ return function(request, response)
     else
       response.status = api_response.status
       response.json_rpc = rpc_response_or_error
+      response.raw_json_payload = api_response.body
       return
     end
   end
