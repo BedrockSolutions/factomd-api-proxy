@@ -1,5 +1,6 @@
 {{- $corsAllowOrigin := getv "/corsAllowOrigin" "" -}}
-{{- $factomdUrl := getv "/factomdUrl" -}}
+{{- $factomdApiUrl := getv "/factomdApiUrl" -}}
+{{- $factomdControlPanelUrl := getv "/factomdControlPanelUrl" -}}
 {{- $listenPort := getv "/listenPort" "" -}}
 {{- $name := getv "/name" -}}
 {{- $sslCertificate := getv "/ssl/certificate" "" -}}
@@ -16,7 +17,8 @@
 //// -------------------------------
 //// version: {{ $version }}
 //// name: {{ $name }}
-//// factomd URL: {{ $factomdUrl }}
+//// factomd API URL: {{ $factomdApiUrl }}
+//// factomd control panel URL: {{ $factomdControlPanelUrl }}
 //// container port: {{ $port }}
 //// CORS allowed origin: {{ $corsAllowOrigin }}
 //// SSL enabled: {{ $sslEnabled }}

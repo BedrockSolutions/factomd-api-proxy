@@ -5,7 +5,8 @@ owner = "app"
 mode = "0644"
 keys = [
   "/corsAllowOrigin",
-  "/factomdUrl",
+  "/factomdApiUrl",
+  "/factomdControlPanelUrl",
   "/listenPort",
   "/name",
   "/ssl/certificate",

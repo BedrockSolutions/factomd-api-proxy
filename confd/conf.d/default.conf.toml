@@ -6,7 +6,8 @@ mode = "0644"
 keys = [
   "/accessControlWhitelist",
   "/corsAllowOrigin",
-  "/factomdUrl",
+  "/factomdApiUrl",
+  "/factomdControlPanelUrl",
   "/healthCheck/clockSpreadToleranceInSeconds",
   "/healthCheck/maxBlockAgeInSeconds",
   "/listenPort",

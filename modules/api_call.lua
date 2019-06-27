@@ -10,13 +10,13 @@ return function(request, response)
     method = ngx.HTTP_POST,
   }
 
-  local api_response = ngx.location.capture('/factomd', options)
+  local api_response = ngx.location.capture('/factomdApi', options)
 
   local data = { factomdResponse = api_response }
   local message
 
   if not api_response.body or api_response.body == '' then
-    message = 'No response received from factomd'
+    message = 'No response received from factomd JSONRPC'
 
   else
     local is_json_valid, rpc_response_or_error = pcall(cjson.decode, api_response.body)
