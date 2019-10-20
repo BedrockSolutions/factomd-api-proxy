@@ -1,5 +1,6 @@
 {{- $corsAllowOrigin := getv "/corsAllowOrigin" "" -}}
 {{- $factomdUrl := getv "/factomdUrl" -}}
+{{- $factomdHostPort := index (split $factomdUrl "//") 1 -}}
 {{- $listenPort := getv "/listenPort" "" -}}
 {{- $name := getv "/name" -}}
 {{- $sslCertificate := getv "/ssl/certificate" "" -}}
@@ -19,6 +20,7 @@
 //// factomd URL: {{ $factomdUrl }}
 //// container port: {{ $port }}
 //// CORS allowed origin: {{ $corsAllowOrigin }}
+//// HTTP Host header: {{ $factomdHostPort }}
 //// SSL enabled: {{ $sslEnabled }}
 //// -------------------------------
 ////////////////////////////////////
