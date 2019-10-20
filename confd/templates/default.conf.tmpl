@@ -3,6 +3,7 @@
 {{- $clientBodyBufferSize := getv "/nginx/clientBodyBufferSize" -}}
 {{- $corsAllowOrigin := getv "/corsAllowOrigin" "" -}}
 {{- $factomdUrl := getv "/factomdUrl" -}}
+{{- $factomdHostPort := index (split $factomdUrl "//") 1 -}}
 {{- $healthCheckMaxBlockAge := getv "/healthCheck/maxBlockAgeInSeconds" -}}
 {{- $healthCheckClockSpreadTolerance := getv "/healthCheck/clockSpreadToleranceInSeconds" -}}
 {{- $keepAliveRequests := getv "/nginx/keepAliveRequests" -}}
@@ -122,7 +123,7 @@ server {
     proxy_connect_timeout {{ $proxyConnectTimeout }};
     proxy_request_buffering {{ if eq $requestBuffering "on" }}on{{ else }}off{{ end }};
     proxy_set_header Forwarded $proxy_add_forwarded;
-    proxy_set_header Host $host;
+    proxy_set_header Host {{ $factomdHostPort }};
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
     proxy_set_header X-Real-IP $remote_addr;

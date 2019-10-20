@@ -4,8 +4,8 @@ accessControlWhitelist:
 
 corsAllowOrigin: null
 
-# Upstream factomd instance. URL with protocol, host or IP, and optional port
-factomdUrl: http://courtesy-node.factom.com
+# Upstream factomd instance. URL with protocol, host or IP, and port
+factomdUrl: http://courtesy-node.factom.com:80
 
 healthCheck:
 
