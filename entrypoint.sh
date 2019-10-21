@@ -2,7 +2,7 @@
 
 confd -onetime -sync-only -config-file "/home/app/confd/confd.toml"
 
-cat ~/boot_output.txt
+cat /home/app/boot_output.txt
 
 {
   while true; do
